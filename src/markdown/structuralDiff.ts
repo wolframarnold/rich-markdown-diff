@@ -148,6 +148,7 @@ export function executeWithFullPipeline(
     restored = applyStructuralDiffPipeline(restored, execute, localTokens);
   }
 
+  restored = normalizeMathBlockDiffs(restored);
   return { diff: restored, tokens: localTokens };
 }
 
@@ -1275,7 +1276,6 @@ export function refineBlockDiffs(
 
     interface PreBlock {
       full: string;
-      delAttrs: string;
       preAttrs: string;
       inner: string;
     }
@@ -1286,7 +1286,6 @@ export function refineBlockDiffs(
     while ((m = delPreRegex.exec(resultHtml)) !== null) {
       delBlocks.push({
         full: m[0],
-        delAttrs: m[1],
         preAttrs: m[2],
         inner: m[3],
       });
@@ -1294,7 +1293,6 @@ export function refineBlockDiffs(
     while ((m = insPreRegex.exec(resultHtml)) !== null) {
       insBlocks.push({
         full: m[0],
-        delAttrs: m[1],
         preAttrs: m[2],
         inner: m[3],
       });
@@ -1501,7 +1499,6 @@ export function consolidateBlockDiffs(html: string): string {
       return `${tagWithClass}${content}${closeTag}`;
     },
   );
-
   blocks.forEach((tag) => {
     const regex = new RegExp(
       `<(?:${tag})[^>]*>[\\s\\S]*?<\\/(?:${tag})>|<(?:${tag})[^>]*\\/?>`,
@@ -1564,6 +1561,26 @@ export function consolidateBlockDiffs(html: string): string {
   return result;
 }
 
+export function normalizeMathBlockDiffs(html: string): string {
+  return html.replace(
+    /<p[^>]*class=("|')[^"']*katex-block[^"']*\1[^>]*>[\s\S]*?<\/p>/gi,
+    (match) => {
+      const hasIns = /<ins\b[^>]*>([\s\S]*?)<\/ins>/gi.test(match);
+      const hasDel = /<del\b[^>]*>([\s\S]*?)<\/del>/gi.test(match);
+
+      if (hasIns && !hasDel && checkIfAllContentIsWrapped(match, "ins")) {
+        return `<ins class="diffins diff-block">${cleanInnerDiffTags(match, "ins")}</ins>`;
+      }
+
+      if (hasDel && !hasIns && checkIfAllContentIsWrapped(match, "del")) {
+        return `<del class="diffdel diff-block">${cleanInnerDiffTags(match, "del")}</del>`;
+      }
+
+      return match;
+    },
+  );
+}
+
 export function cleanupCheckboxArtifacts(html: string): string {
   return html.replace(
     /(<input[^>]+class="task-list-item-checkbox"[^>]*>)(\s*)(?=(?:<p\b|<div\b|<ins[^>]*>\s*\[))/gi,
@@ -1595,8 +1612,39 @@ export function wrapHeadingPrefixes(html: string): string {
 }
 
 export function markGhostListItems(html: string): string {
-  // 1. First, handle cases where the whole <li> is wrapped in <ins> or <del>
+  // 1. First, handle cases where the whole list container is wrapped in <ins> or <del>
   let result = html.replace(
+    /(<(ins|del)[^>]*>)\s*(<(ul|ol|dl)[^>]*>[\s\S]*?<\/(ul|ol|dl)>)\s*(<\/\2>)/gi,
+    (match, open, type, list, openTagName, closeTagName, close) => {
+      if (openTagName.toLowerCase() !== closeTagName.toLowerCase()) {
+        return match;
+      }
+
+      const marker =
+        type === "ins"
+          ? ' data-all-inserted="true"'
+          : ' data-all-deleted="true"';
+
+      const markedList = list.replace(
+        /<li([^>]*)>/gi,
+        (liMatch: string, attrs: string) => {
+          if (
+            attrs.includes('data-all-inserted="true"') ||
+            attrs.includes('data-all-deleted="true"')
+          ) {
+            return liMatch;
+          }
+
+          return `<li${attrs}${marker}>`;
+        },
+      );
+
+      return `${open}${markedList}${close}`;
+    },
+  );
+
+  // 2. Then handle cases where the whole <li> is wrapped in <ins> or <del>
+  result = result.replace(
     /(<(ins|del)[^>]*>)\s*(<li[^>]*>[\s\S]*?<\/li>)\s*(<\/\2>)/gi,
     (match, open, type, li, close) => {
       if (type === "ins") {
@@ -1609,7 +1657,7 @@ export function markGhostListItems(html: string): string {
     },
   );
 
-  // 2. Then handle cases where the markers are INSIDE the <li>
+  // 3. Then handle cases where the markers are INSIDE the <li>
   result = result.replace(
     /<li([^>]*)>([\s\S]*?)<\/li>/gi,
     (match, attrs: string, content: string) => {

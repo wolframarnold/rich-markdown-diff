@@ -57,7 +57,7 @@ export function getWebviewContent(
     original?: any;
     modified?: any;
   },
-  showGutterMarkers: boolean = true,
+  showGutterMarkers: boolean = false,
   showGitBlame: boolean = true,
   lineHoverDelay: number = 500,
 ): string {
@@ -71,8 +71,12 @@ export function getWebviewContent(
     return text;
   };
 
-  const safeLeft = escapeHtml(leftLabel === "Original" ? t("Original") : leftLabel);
-  const safeRight = escapeHtml(rightLabel === "Modified" ? t("Modified") : rightLabel);
+  const safeLeft = escapeHtml(
+    leftLabel === "Original" ? t("Original") : leftLabel,
+  );
+  const safeRight = escapeHtml(
+    rightLabel === "Modified" ? t("Modified") : rightLabel,
+  );
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -335,33 +339,29 @@ export function getWebviewContent(
         /* Overview Ruler */
         .overview-ruler {
             position: fixed;
-            right: 0;
-            top: 30px; /* Below header */
-            bottom: 0;
-            width: 14px;
-            background: rgba(127, 127, 127, 0.05);
-            border-left: 1px solid var(--vscode-panel-border);
+          top: 0;
+          height: 0;
+            width: 4px;
+          background: transparent;
             z-index: 100;
             pointer-events: auto;
             cursor: pointer;
         }
         .overview-marker {
             position: absolute;
-            left: 2px;
-            right: 2px;
-            /* height will be set via JS based on change area */
-            min-height: 3px;
+            left: 0;
+            width: 4px;
+            right: auto;
+            height: 3px;
+            min-height: 2px;
+            border-radius: 999px;
             z-index: 101;
             pointer-events: none;
         }
         .overview-marker.ins { background-color: rgba(34, 197, 94, 0.8); }
         .overview-marker.del { background-color: rgba(239, 68, 68, 0.8); }
-        .overview-marker.ins.del { background-color: rgba(55, 148, 255, 0.8); }
+        .overview-marker.mod { background-color: rgba(55, 148, 255, 0.8); }
         
-        body.inline-mode .overview-ruler {
-            top: 30px; /* Toolbar is 40px but header is hidden? Header is 30px. */
-        }
-
         /* Scrollbar Styling */
         ::-webkit-scrollbar { width: 10px; height: 10px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -376,7 +376,7 @@ export function getWebviewContent(
         dl,
         blockquote,
         pre,
-        table,
+        .table-scroll,
         hr,
         .markdown-alert,
         .katex-block,
@@ -489,7 +489,6 @@ export function getWebviewContent(
             cursor: help;
             background-color: var(--vscode-editor-hoverHighlightBackground, rgba(127, 127, 127, 0.1));
         }
-
         /* Ensure alerts don't inherit or double-up on blockquote borders */
         .markdown-alert {
             border-left: 0.25em solid;
@@ -647,13 +646,22 @@ export function getWebviewContent(
         p > img:only-child {
           display: block;
         }
+        .table-scroll {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          overflow-x: auto;
+          overflow-y: hidden;
+          box-sizing: border-box;
+        }
         table {
           width: max-content;
           min-width: 100%;
-          max-width: 100%;
+          max-width: none;
           border-collapse: collapse;
           line-height: 1.5;
           background-color: var(--vscode-editor-background);
+          margin-bottom: 0;
         }
         th,
         td {
@@ -903,8 +911,8 @@ export function getWebviewContent(
 
 
 
-        ins:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure),
-        del:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure) {
+        ins:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure),
+        del:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure) {
             display: block;
           width: fit-content;
           max-width: 100%;
@@ -948,8 +956,8 @@ export function getWebviewContent(
             opacity: 0.5;
         }
         
-        body.inline-mode #right-pane ins .task-list-item-checkbox {
-            margin-left: 0.2em; /* reset the -1.6em pull so it doesn't overlap the del checkbox */
+        body.inline-mode #right-pane del + ins .task-list-item-checkbox {
+          margin-left: 0.2em; /* only reset when an inserted checkbox follows a deleted one in the same item */
         }
 
         /* Block-Level Diffs (Tables, Lists, Blockquotes) */
@@ -974,6 +982,28 @@ export function getWebviewContent(
         ins.diffins.diff-block, ins.diffmod.diff-block {
             background-color: rgba(74, 222, 128, 0.2); 
             border-color: rgba(34, 197, 94, 0.6);
+        }
+        :is(del.diffdel.diff-block, del.diffmod.diff-block, ins.diffins.diff-block, ins.diffmod.diff-block):has(> pre) {
+          padding: 0;
+          overflow: hidden;
+        }
+        :is(del.diffdel.diff-block, del.diffmod.diff-block, ins.diffins.diff-block, ins.diffmod.diff-block):has(> pre) > pre {
+          margin: 0;
+          border: none;
+          border-radius: 0;
+          background-color: transparent;
+        }
+        body.inline-mode #right-pane :is(del.diffdel.diff-block, del.diffmod.diff-block, ins.diffins.diff-block, ins.diffmod.diff-block) {
+          display: block;
+          text-decoration: none;
+          border-bottom: none;
+          opacity: 1;
+        }
+        body.inline-mode #right-pane :is(del.diffdel.diff-block, del.diffmod.diff-block, ins.diffins.diff-block, ins.diffmod.diff-block) > :first-child {
+          margin-top: 0;
+        }
+        body.inline-mode #right-pane :is(del.diffdel.diff-block, del.diffmod.diff-block, ins.diffins.diff-block, ins.diffmod.diff-block) > :last-child {
+          margin-bottom: 0;
         }
 
         /* Let the red/green tint of a diff-block container show through table cells.
@@ -1105,6 +1135,9 @@ export function getWebviewContent(
             padding: 10px;
             border-bottom: 1px solid var(--vscode-panel-border);
         }
+        .frontmatter-diff .table-scroll {
+          margin-bottom: 0;
+        }
         .frontmatter-diff table {
             width: 100%;
             border-collapse: collapse;
@@ -1210,8 +1243,6 @@ export function getWebviewContent(
         /* Simplified to avoid heavy rendering */
         /* Active Change Highlighting */
         .selected-change {
-            background-color: rgba(255, 200, 0, 0.3) !important;
-            box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.8);
             border-radius: 2px;
             position: relative; 
             z-index: 10;
@@ -1228,15 +1259,51 @@ export function getWebviewContent(
             background-color: transparent !important;
             box-shadow: none !important;
         }
+        .selected-change.selected-ins {
+          background-color: rgba(34, 197, 94, 0.25) !important;
+          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.8);
+        }
 
-        /* Specific High Visibility for Complex Blocks (Mermaid/Math) */
+        .selected-change.selected-del {
+          background-color: rgba(248, 113, 113, 0.2) !important;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.8);
+        }
+
+        .selected-change.selected-mod {
+            background-color: rgba(59, 130, 246, 0.18) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.75);
+        }
+
+        /* Specific High Visibility for Complex Blocks (Code/Mermaid/Math) */
+        pre.selected-change,
         .mermaid.selected-change, 
         .katex-block.selected-change {
-            background-color: rgba(255, 235, 59, 0.2) !important; /* Yellow tint for focus */
-          border: 1px solid rgba(255, 165, 0, 0.9) !important;
-          box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.45) !important;
             overflow: visible !important;
             display: block; 
+        }
+
+        pre.selected-change.selected-ins,
+        .mermaid.selected-change.selected-ins,
+        .katex-block.selected-change.selected-ins {
+          background-color: rgba(34, 197, 94, 0.25) !important;
+          border: 1px solid #22c55e !important;
+          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.8) !important;
+        }
+
+        pre.selected-change.selected-del,
+        .mermaid.selected-change.selected-del,
+        .katex-block.selected-change.selected-del {
+          background-color: rgba(248, 113, 113, 0.2) !important;
+          border: 1px solid #ef4444 !important;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.8) !important;
+        }
+
+        pre.selected-change.selected-mod,
+        .mermaid.selected-change.selected-mod,
+        .katex-block.selected-change.selected-mod {
+          background-color: rgba(59, 130, 246, 0.08) !important;
+          border: 1px solid rgba(59, 130, 246, 0.9) !important;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
         }
 
         /* Image Focus Style (same as Mermaid) */
@@ -1286,7 +1353,6 @@ export function getWebviewContent(
             pointer-events: none;
             z-index: 100;
         }
-
         .block-editor-overlay {
             position: absolute;
             z-index: 10000;
@@ -1582,6 +1648,19 @@ export function getWebviewContent(
             margin: 0 !important;
         }
 
+        .mermaid {
+          background: transparent;
+          color: var(--markdown-foreground);
+          overflow-x: auto;
+        }
+
+        .mermaid svg {
+          display: block;
+          max-width: 100%;
+          height: auto;
+          background: transparent;
+        }
+
         /* Highlight the actual SVG shapes */
         .mermaid.selected-change svg, 
         .selected-change svg {
@@ -1696,7 +1775,6 @@ export function getWebviewContent(
     </div>
     <div class="overview-ruler" id="left-overview-ruler"></div>
     <div class="overview-ruler" id="right-overview-ruler"></div>
-    <div id="blame-tooltip" class="blame-tooltip"></div>
     <script nonce="${nonce}">
         window.vscode = acquireVsCodeApi();
     </script>
@@ -1921,7 +1999,6 @@ export function getWebviewContent(
         let isFolded = false;
         let changeElements = [];
         let currentChangeIndex = -1;
-        let isScrolling = false; // Restored missing variable for scroll sync
 
         const toggleInline = () => {
             isInline = !isInline;
@@ -1948,20 +2025,45 @@ export function getWebviewContent(
             updateBreadcrumbs(rightPane, rightBreadcrumbs);
         };
 
+        const syncRulerToPane = (ruler, pane) => {
+          const paneRect = pane.getBoundingClientRect();
+          const rulerWidth = ruler.offsetWidth || 4;
+          const paneStyle = getComputedStyle(pane);
+          const borderWidth =
+            parseFloat(paneStyle.borderLeftWidth || '0') +
+            parseFloat(paneStyle.borderRightWidth || '0');
+          const totalScrollbarGutter = Math.max(
+            pane.offsetWidth - pane.clientWidth - borderWidth,
+            0,
+          );
+          const gutterSides = paneStyle.scrollbarGutter.includes('both-edges') ? 2 : 1;
+          const scrollbarTrackWidth = totalScrollbarGutter > 0
+            ? totalScrollbarGutter / gutterSides
+            : 0;
+          const scrollbarTrackInset = scrollbarTrackWidth > 0
+            ? scrollbarTrackWidth
+            : 0;
+          const scrollbarTrackLeft = paneRect.right - scrollbarTrackWidth;
+          const centeredTrackLeft = scrollbarTrackLeft + Math.max((scrollbarTrackWidth - rulerWidth) / 2, 0);
+          ruler.style.top = (paneRect.top + scrollbarTrackInset) + 'px';
+          ruler.style.height = Math.max(paneRect.height - (scrollbarTrackInset * 2), 0) + 'px';
+          ruler.style.left = (scrollbarTrackWidth > 0
+            ? centeredTrackLeft
+            : paneRect.right - rulerWidth) + 'px';
+          ruler.style.right = 'auto';
+        };
+
         const updateOverviewRulerVisibility = () => {
-            if (isInline) {
-                leftRuler.style.display = 'none';
-                rightRuler.style.width = '14px';
-                rightRuler.style.left = 'auto';
-                rightRuler.style.right = '0';
-            } else {
-                leftRuler.style.display = 'block';
-                leftRuler.style.left = 'calc(50% - 14px)';
-                leftRuler.style.right = 'auto';
-                rightRuler.style.display = 'block';
-                rightRuler.style.left = 'auto';
-                rightRuler.style.right = '0';
-            }
+          if (isInline) {
+            leftRuler.style.display = 'none';
+            rightRuler.style.display = 'block';
+            syncRulerToPane(rightRuler, rightPane);
+          } else {
+            leftRuler.style.display = 'block';
+            rightRuler.style.display = 'block';
+            syncRulerToPane(leftRuler, leftPane);
+            syncRulerToPane(rightRuler, rightPane);
+          }
         };
         
         /**
@@ -1970,29 +2072,12 @@ export function getWebviewContent(
          */
         const fixMermaid = (container) => {
              const mermaids = container.querySelectorAll('.mermaid[data-original-content]');
-             const renderPasses = [];
              noteRuntimeEvent('fix-mermaid', { count: mermaids.length });
-             mermaids.forEach(el => {
-                 // Only fix if it looks broken (e.g. small height) or just force it?
-                 // Force restoration is safer for "hidden -> visible" transitions.
-                 const original = el.getAttribute('data-original-content');
-                 if (original) {
-                     // Check if already processed and looks okay? 
-                     // Mermaid removes the text and puts SVG. 
-                     // If we want to re-render, we MUST restore text.
-                     // But we should only do this if it's actually visible now.
-                     if (el.offsetParent !== null) { // is visible
-                         el.removeAttribute('data-processed'); // Mermaid marker
-                       el.textContent = original; // Restore source as text, not HTML
-                         renderPasses.push(
-                           Promise.resolve().then(() => mermaid.init(undefined, el)),
-                         );
-                     }
-                 }
-             });
+             initializeMermaid();
+             const visibleMermaids = Array.from(mermaids).filter(el => el.offsetParent !== null);
 
-             if (renderPasses.length > 0) {
-               Promise.allSettled(renderPasses).finally(() => scheduleAsyncLayoutRefresh());
+             if (visibleMermaids.length > 0) {
+               renderMermaidDiagrams(container).finally(() => scheduleAsyncLayoutRefresh());
              }
         };
         
@@ -2173,6 +2258,22 @@ export function getWebviewContent(
             return elRect.top - paneRect.top + pane.scrollTop;
         };
 
+        const getVisualChangeHeight = (el) => {
+          if (!el || !el.getBoundingClientRect) return 0;
+          return Math.max(el.getBoundingClientRect().height, el.offsetHeight || 0, 0);
+        };
+
+        const getChangeKind = (el) => {
+          if (!el || !el.tagName) return null;
+          if (el.tagName === 'INS' || el.classList?.contains('fm-new') || el.classList?.contains('diffins')) return 'ins';
+          if (el.tagName === 'DEL' || el.classList?.contains('fm-old') || el.classList?.contains('diffdel')) return 'del';
+          return null;
+        };
+
+        const clearSelectedChangeClasses = (el) => {
+          el.classList.remove('selected-change', 'selected-ins', 'selected-del', 'selected-mod');
+        };
+
         // --- Navigation Logic ---
         function collectChanges() {
             try {
@@ -2180,7 +2281,7 @@ export function getWebviewContent(
                 currentChangeIndex = -1;
                 statusMsg.textContent = t("Scanning...");
                 
-                document.querySelectorAll('.selected-change').forEach(el => el.classList.remove('selected-change'));
+                document.querySelectorAll('.selected-change, .selected-ins, .selected-del, .selected-mod').forEach(clearSelectedChangeClasses);
                 
                 const isMeaningfulChange = (el) => {
                      if (!el) return false;
@@ -2197,21 +2298,22 @@ export function getWebviewContent(
                      if (el.querySelector && el.querySelector('input[type="checkbox"]')) return true;
 
                      // Explicitly allow complex blocks
-                     if (el.querySelector && (el.querySelector('.mermaid') || el.querySelector('.katex-block'))) return true;
+                     if (el.querySelector && (el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block'))) return true;
                      return false;
                 };
 
-                // Helper to check if element is part of a complex block (Mermaid, Math, etc.)
-                // Now checks BOTH if we are inside one OR if we contain one.
+                // Helper to promote inline changes to visual blocks that cannot be represented well
+                // by their inner diff nodes alone.
                 const getComplexContainer = (el) => {
-                    // Case 1: The change is inside a complex block (e.g. text change in a node)
-                    const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg');
+                  // Case 1: The change is inside a complex visual block like Mermaid or KaTeX.
+                  // Table and stable code-block diffs stay granular so the ruler and selection can stay local.
+                  const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg');
                     if (ancestor) return ancestor;
 
-                    // Case 2: The change WRAPS a complex block (e.g. a new diagram added)
-                    // We prefer the child container for highlighting as it's the visual element.
+                  // Case 2: The change wraps a complex visual block (e.g. a new code block or diagram added)
+                  // We prefer the child container for highlighting as it's the visual element.
                     if (el.querySelector) {
-                         let child = el.querySelector('.mermaid') || el.querySelector('.katex-block');
+                     let child = el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block');
                          if (!child) {
                              // Only treat SVG as complex if it's NOT an alert icon
                              const svg = el.querySelector('svg');
@@ -2225,8 +2327,8 @@ export function getWebviewContent(
                     return null;
                 };
 
-                // Set to track complex containers we've already added
-                const seenContainers = new Set();
+                // Track which visual containers have already been added per pane and change kind.
+                const seenContainers = new WeakMap();
 
                 const processNodeList = (nodes, pane) => {
                     const results = [];
@@ -2237,17 +2339,26 @@ export function getWebviewContent(
                         if (el.offsetParent === null) {
                             if (!isMarpMode || !el.closest('.marp-slide-wrapper')) return;
                         }
+                        if (el.offsetParent === null) {
+                            if (!isMarpMode || !el.closest('.marp-slide-wrapper')) return;
+                        }
+                        const kind = getChangeKind(el);
                         
-                        // Check for Complex Container (Mermaid/Math)
+                    // Check for visual containers (tables, Mermaid, math)
                         const container = getComplexContainer(el);
                         if (container) {
-                            if (!seenContainers.has(container)) {
-                                seenContainers.add(container);
+                      const paneKey = pane === leftPane ? 'left' : 'right';
+                      const seenKeys = seenContainers.get(container) || new Set();
+                      const seenKey = paneKey + ':' + (kind || 'change');
+                      if (!seenKeys.has(seenKey)) {
+                        seenKeys.add(seenKey);
+                        seenContainers.set(container, seenKeys);
                                 results.push({
                                     el: container,
                                     top: getRelativeTop(container, pane),
                                     ratio: getRatio(container, pane),
-                                    pane: pane
+                          pane: pane,
+                          kind: kind
                                 });
                             }
                             return; // Skip individual element
@@ -2258,7 +2369,8 @@ export function getWebviewContent(
                                 el: el,
                                 top: getRelativeTop(el, pane),
                                 ratio: getRatio(el, pane),
-                                pane: pane
+                        pane: pane,
+                        kind: kind
                             });
                         }
                     });
@@ -2366,67 +2478,124 @@ export function getWebviewContent(
             updateOverviewRuler();
         }
 
+        const getItemTop = (item, pane) => {
+          if (!item || !pane) return 0;
+          const liveTop = item.el ? getRelativeTop(item.el, pane) : NaN;
+          if (!Number.isNaN(liveTop) && liveTop > 0) {
+            return liveTop;
+          }
+
+          return item.top || 0;
+        };
+
+        const getGroupPaneMetrics = (group, pane) => {
+          const groupItems = Array.isArray(group) ? group : [group];
+          const paneItems = groupItems.filter(item => item.pane === pane);
+          if (paneItems.length === 0) return null;
+
+          const tops = paneItems.map(item => getItemTop(item, pane));
+          const bottoms = paneItems.map(item => getItemTop(item, pane) + getVisualChangeHeight(item.el));
+          const top = Math.max(0, Math.min(...tops));
+          const bottom = Math.min(pane.scrollHeight, Math.max(...bottoms));
+
+          return {
+            paneItems,
+            top,
+            bottom,
+            height: Math.max(bottom - top, 0),
+          };
+        };
+
+        const getGroupTargetScrollTop = (groupMetrics, pane) => {
+          if (!groupMetrics || !pane) return 0;
+
+          const paneHeight = pane.clientHeight;
+          const scrollRange = Math.max(pane.scrollHeight - paneHeight, 0);
+          const rawTargetScrollTop = groupMetrics.height >= paneHeight
+            ? groupMetrics.top
+            : groupMetrics.top - ((paneHeight - groupMetrics.height) / 2);
+
+          return Math.min(Math.max(0, rawTargetScrollTop), scrollRange);
+        };
+
+        const getGroupIndicatorStartScrollTop = (groupMetrics, pane) => {
+          if (!groupMetrics || !pane) return 0;
+
+          const scrollRange = Math.max(pane.scrollHeight - pane.clientHeight, 0);
+          const rawIndicatorScrollTop = Math.max(groupMetrics.top, 0);
+
+          return Math.min(rawIndicatorScrollTop, scrollRange);
+        };
+
         function updateOverviewRuler() {
-            const drawRuler = (pane, ruler, groups) => {
+          updateOverviewRulerVisibility();
+
+          const drawRuler = (pane, ruler, groups) => {
                 ruler.innerHTML = '';
                 const paneHeight = pane.scrollHeight;
                 if (paneHeight <= 0) return;
 
+                const rulerHeight = ruler.clientHeight;
+                if (rulerHeight === 0) return;
+
+                const scrollRange = Math.max(paneHeight - pane.clientHeight, 0);
+                const thumbHeightPx = scrollRange > 0
+                  ? Math.max((pane.clientHeight / paneHeight) * rulerHeight, 0)
+                  : rulerHeight;
+                const thumbTravelPx = Math.max(rulerHeight - thumbHeightPx, 0);
+
+                const getOverviewOffset = (offset) => {
+                  const clampedOffset = Math.min(Math.max(offset, 0), scrollRange);
+                  if (scrollRange > 0) {
+                    return (clampedOffset / scrollRange) * thumbTravelPx;
+                  }
+
+                  return 0;
+                };
+
+                const getOverviewSpan = (span) => {
+                  const maxSpan = scrollRange > 0 ? scrollRange : paneHeight;
+                  if (maxSpan <= 0) return 0;
+
+                  const clampedSpan = Math.min(Math.max(span, 0), maxSpan);
+                  return scrollRange > 0
+                    ? (clampedSpan / maxSpan) * thumbTravelPx
+                    : (clampedSpan / maxSpan) * rulerHeight;
+                };
+
                 groups.forEach(group => {
-                    let minTop = Infinity;
-                    let maxBottom = -Infinity;
-                    let hasIns = false;
-                    let hasDel = false;
+                  const groupMetrics = getGroupPaneMetrics(group, pane);
+                  if (!groupMetrics) return;
+                  const { paneItems, height } = groupMetrics;
 
-                    group.forEach(item => {
-                        const t = item.top;
-                        const elRect = item.el.getBoundingClientRect();
-                        const b = t + elRect.height;
-                        if (t < minTop) minTop = t;
-                        if (b > maxBottom) maxBottom = b;
-                        
-                        const el = item.el;
-                        if (el.tagName === 'INS' || el.classList.contains('ins') || el.classList.contains('diffins') || el.classList.contains('fm-new')) {
-                            hasIns = true;
-                        }
-                        if (el.tagName === 'DEL' || el.classList.contains('del') || el.classList.contains('diffdel') || el.classList.contains('fm-old')) {
-                            hasDel = true;
-                        }
-                        if (el.classList.contains('image-diff-block')) {
-                            hasIns = true;
-                            hasDel = true;
-                        }
-                    });
+                  const hasIns = paneItems.some(item => item.kind === 'ins');
+                  const hasDel = paneItems.some(item => item.kind === 'del');
+                  const markerKind = hasIns && hasDel ? 'mod' : hasIns ? 'ins' : hasDel ? 'del' : null;
+                  if (!markerKind) return;
 
-                    if (minTop === Infinity) return;
+                  const markerHeightPx = Math.min(
+                    Math.max(getOverviewSpan(height), 2),
+                    rulerHeight,
+                  );
+                  const indicatorStartScrollTop = getGroupIndicatorStartScrollTop(groupMetrics, pane);
+                  const markerTopPx = Math.min(
+                    Math.max(getOverviewOffset(indicatorStartScrollTop), 0),
+                    Math.max(rulerHeight - markerHeightPx, 0),
+                  );
 
-                    const height = maxBottom - minTop;
-                    const marker = document.createElement('div');
-                    marker.className = 'overview-marker';
-                    if (hasIns && hasDel) {
-                        marker.classList.add('ins', 'del');
-                    } else if (hasIns) {
-                        marker.classList.add('ins');
-                    } else if (hasDel) {
-                        marker.classList.add('del');
-                    }
-
-                    const topPct = (minTop / paneHeight) * 100;
-                    const heightPct = (height / paneHeight) * 100;
-
-                    marker.style.top = topPct + '%';
-                    marker.style.height = heightPct + '%';
-                    ruler.appendChild(marker);
+                  const marker = document.createElement('div');
+                  marker.className = 'overview-marker ' + markerKind;
+                  marker.style.top = markerTopPx + 'px';
+                  marker.style.height = markerHeightPx + 'px';
+                  ruler.appendChild(marker);
                 });
             };
 
             if (isInline) {
-                drawRuler(rightPane, rightRuler, changeElements);
+              drawRuler(rightPane, rightRuler, changeElements);
             } else {
-                const leftGroups = changeElements.filter(g => g.length > 0 && g[0].pane === leftPane);
-                const rightGroups = changeElements.filter(g => g.length > 0 && g[0].pane === rightPane);
-                drawRuler(leftPane, leftRuler, leftGroups);
-                drawRuler(rightPane, rightRuler, rightGroups);
+              drawRuler(leftPane, leftRuler, changeElements);
+              drawRuler(rightPane, rightRuler, changeElements);
             }
         }
 
@@ -2434,8 +2603,18 @@ export function getWebviewContent(
             const ruler = e.currentTarget;
             const rect = ruler.getBoundingClientRect();
             const clickY = e.clientY - rect.top;
-            const pct = clickY / rect.height;
-            pane.scrollTop = pct * (pane.scrollHeight - pane.clientHeight);
+            const scrollRange = Math.max(pane.scrollHeight - pane.clientHeight, 0);
+            if (scrollRange <= 0) {
+              pane.scrollTop = 0;
+              return;
+            }
+
+            const thumbHeightPx = Math.max((pane.clientHeight / pane.scrollHeight) * rect.height, 0);
+            const thumbTravelPx = Math.max(rect.height - thumbHeightPx, 0);
+            const thumbTopY = Math.min(Math.max(clickY, 0), thumbTravelPx);
+            pane.scrollTop = thumbTravelPx > 0
+              ? (thumbTopY / thumbTravelPx) * scrollRange
+              : 0;
         };
 
         leftRuler.addEventListener('click', (e) => handleRulerClick(e, leftPane));
@@ -2517,7 +2696,6 @@ export function getWebviewContent(
             originalCollectChanges();
             attachBlameEvents();
         };
-
         // --- Layout Stability ---
         let resizeTimeout;
         let layoutRefreshTimeout;
@@ -2707,44 +2885,31 @@ export function getWebviewContent(
             if (index < 0 || index >= changeElements.length) return;
             
             // Remove previous highlight
-            document.querySelectorAll('.selected-change').forEach(el => el.classList.remove('selected-change'));
+          document.querySelectorAll('.selected-change, .selected-ins, .selected-del, .selected-mod').forEach(clearSelectedChangeClasses);
             
             const group = changeElements[index];
             if (!group || group.length === 0) return;
 
+          const hasIns = group.some(item => item.kind === 'ins');
+          const hasDel = group.some(item => item.kind === 'del');
+          const selectedKindClass = hasIns && hasDel ? 'selected-mod' : hasIns ? 'selected-ins' : hasDel ? 'selected-del' : '';
+
             const firstItem = group[0];
-            const targetEl = firstItem.el || firstItem;
             const targetPane = firstItem.pane || rightPane; // Default to right pane for inline
+            const groupMetrics = getGroupPaneMetrics(group, targetPane);
+            if (!groupMetrics) return;
             
             // Apply persistent highlight
             group.forEach(item => {
                 const el = item.el || item;
                 el.classList.add('selected-change');
+            if (selectedKindClass) {
+              el.classList.add(selectedKindClass);
+            }
             });
 
-            const paneHeight = targetPane.clientHeight;
-            
-            // Use getRelativeTop to get the robust position relative to the pane (handles nested offsetParents correctly)
-            // This fixes the issue where offsetTop is relative to a nested container (e.g. inside Mermaid div)
-            let elTop = getRelativeTop(targetEl, targetPane);
-            
-            // Fallback: If getRelativeTop returns ~0 because element is detached/hidden (e.g. replaced by Mermaid),
-            // use the stored 'top' from collectChanges if valid.
-            // Note: getRelativeTop includes scrollTop, so if it returns exactly scrollTop, it implies relative offset is 0.
-            // But here we check if it is suspiciously 0 or NaN.
-            if ((isNaN(elTop) || elTop <= 0) && firstItem.top > 0) {
-                 elTop = firstItem.top;
-            }
-
-            const elHeight = targetEl.getBoundingClientRect().height || 20; 
-            if (targetEl.tagName === 'SECTION') {
-                // For Marp sections, ensure we use the visual height
-            }
-            
-            // Calculate target scroll position (centering the element)
-            const targetScrollTop = elTop - (paneHeight / 2) + (elHeight / 2);
-            
-            targetPane.scrollTop = Math.max(0, targetScrollTop);
+            const targetScrollTop = getGroupTargetScrollTop(groupMetrics, targetPane);
+            targetPane.scrollTop = targetScrollTop;
 
             // Sync the other pane proportionally to keep side-by-side aligned
             if (!isInline) {
@@ -2794,60 +2959,109 @@ export function getWebviewContent(
         }
 
 
-        // --- Scroll Sync (Master-Slave Pattern) ---
-        // Instead of a timer-based lock (which can drop final events),
-        // we track which pane the user is interacting with.
-        
+        // --- Scroll Sync ---
         let activePane = null;
+        let mirroredScrollStateClearFrame = 0;
+        const mirroredScrollState = new WeakMap();
+
+        const clearMirroredScrollState = () => {
+          mirroredScrollState.delete(leftPane);
+          mirroredScrollState.delete(rightPane);
+        };
+
+        const scheduleMirroredScrollStateClear = () => {
+          if (mirroredScrollStateClearFrame) {
+            cancelAnimationFrame(mirroredScrollStateClearFrame);
+          }
+
+          mirroredScrollStateClearFrame = requestAnimationFrame(() => {
+            mirroredScrollStateClearFrame = requestAnimationFrame(() => {
+              clearMirroredScrollState();
+              mirroredScrollStateClearFrame = 0;
+            });
+          });
+        };
+
+        const markMirroredScroll = (pane) => {
+          mirroredScrollState.set(pane, {
+            top: pane.scrollTop,
+            left: pane.scrollLeft,
+          });
+          scheduleMirroredScrollStateClear();
+        };
+
+        const shouldIgnoreMirroredScroll = (pane) => {
+          const state = mirroredScrollState.get(pane);
+          if (!state) {
+            return false;
+          }
+
+          const sameVertical = Math.abs(pane.scrollTop - state.top) <= 0.5;
+          const sameHorizontal = Math.abs(pane.scrollLeft - state.left) <= 0.5;
+
+          if (!sameVertical || !sameHorizontal) {
+            return false;
+          }
+
+          mirroredScrollState.delete(pane);
+          return true;
+        };
 
         const syncScroll = (sourcePane, targetPane) => {
             // Only sync if the source is the one being actively scrolled by user
             if (!activePane) activePane = sourcePane; 
             if (activePane !== sourcePane) return;
 
-            // Specialized sync for Marp slides
-            if (document.body.classList.contains('marp-mode') && !isInline) {
+              // Specialized sync for Marp slides
+              if (document.body.classList.contains('marp-mode') && !isInline) {
                 syncScrollMarp(sourcePane, targetPane);
                 return;
             }
-            
-            const sourceMax = sourcePane.scrollHeight - sourcePane.clientHeight;
-            const targetMax = targetPane.scrollHeight - targetPane.clientHeight;
-          const sourceHorizontalMax = sourcePane.scrollWidth - sourcePane.clientWidth;
-          const targetHorizontalMax = targetPane.scrollWidth - targetPane.clientWidth;
 
-          if (sourceMax > 0 && targetMax > 0) {
-            let targetScrollTop = 0;
-            // Larger 2px margin for subpixel snapping
-            if (sourcePane.scrollTop <= 2) {
-              targetScrollTop = 0;
-            } else if (sourcePane.scrollTop >= sourceMax - 2) {
-              targetScrollTop = targetMax;
-            } else {
-              const percentage = sourcePane.scrollTop / sourceMax;
-              targetScrollTop = percentage * targetMax;
-            }
-                
-            if (Math.abs(targetPane.scrollTop - targetScrollTop) > 0.5) {
-              targetPane.scrollTop = targetScrollTop;
-            }
-            }
+              const sourceMax = sourcePane.scrollHeight - sourcePane.clientHeight;
+              const targetMax = targetPane.scrollHeight - targetPane.clientHeight;
+              const sourceHorizontalMax = sourcePane.scrollWidth - sourcePane.clientWidth;
+              const targetHorizontalMax = targetPane.scrollWidth - targetPane.clientWidth;
+              let shouldMarkTargetScroll = false;
 
-          if (sourceHorizontalMax > 0 && targetHorizontalMax > 0) {
-            let targetScrollLeft = 0;
-            if (sourcePane.scrollLeft <= 2) {
-              targetScrollLeft = 0;
-            } else if (sourcePane.scrollLeft >= sourceHorizontalMax - 2) {
-              targetScrollLeft = targetHorizontalMax;
-            } else {
-              const percentage = sourcePane.scrollLeft / sourceHorizontalMax;
-              targetScrollLeft = percentage * targetHorizontalMax;
-            }
+              if (sourceMax > 0 && targetMax > 0) {
+                let targetScrollTop = targetPane.scrollTop;
 
-            if (Math.abs(targetPane.scrollLeft - targetScrollLeft) > 0.5) {
-              targetPane.scrollLeft = targetScrollLeft;
-            }
-            }
+                if (sourcePane.scrollTop <= 2) {
+                  targetScrollTop = 0;
+                } else if (sourcePane.scrollTop >= sourceMax - 2) {
+                  targetScrollTop = targetMax;
+                } else {
+                  const percentage = sourcePane.scrollTop / sourceMax;
+                  targetScrollTop = percentage * targetMax;
+                }
+
+                if (Math.abs(targetPane.scrollTop - targetScrollTop) > 0.5) {
+                  targetPane.scrollTop = targetScrollTop;
+                  shouldMarkTargetScroll = true;
+                }
+              }
+
+              if (sourceHorizontalMax > 0 && targetHorizontalMax > 0) {
+                let targetScrollLeft = 0;
+                if (sourcePane.scrollLeft <= 2) {
+                  targetScrollLeft = 0;
+                } else if (sourcePane.scrollLeft >= sourceHorizontalMax - 2) {
+                  targetScrollLeft = targetHorizontalMax;
+                } else {
+                  const percentage = sourcePane.scrollLeft / sourceHorizontalMax;
+                  targetScrollLeft = percentage * targetHorizontalMax;
+                }
+
+                if (Math.abs(targetPane.scrollLeft - targetScrollLeft) > 0.5) {
+                  targetPane.scrollLeft = targetScrollLeft;
+                  shouldMarkTargetScroll = true;
+                }
+              }
+
+              if (shouldMarkTargetScroll) {
+                markMirroredScroll(targetPane);
+              }
         };
 
         const syncScrollMarp = (sourcePane, targetPane) => {
@@ -2996,23 +3210,33 @@ export function getWebviewContent(
             });
         };
 
-        const setActive = (pane) => { activePane = pane; };
+        const setActive = (pane) => {
+            activePane = pane;
+        };
         
         // Track mouse/touch to determine which pane should be the 'Master'
         leftPane.addEventListener('mouseenter', () => setActive(leftPane));
         rightPane.addEventListener('mouseenter', () => setActive(rightPane));
+        leftPane.addEventListener('pointerdown', () => setActive(leftPane));
+        rightPane.addEventListener('pointerdown', () => setActive(rightPane));
         leftPane.addEventListener('touchstart', () => setActive(leftPane), { passive: true });
         rightPane.addEventListener('touchstart', () => setActive(rightPane), { passive: true });
         leftPane.addEventListener('wheel', () => setActive(leftPane), { passive: true });
         rightPane.addEventListener('wheel', () => setActive(rightPane), { passive: true });
 
         leftPane.addEventListener('scroll', () => {
-             if (!isInline) syncScroll(leftPane, rightPane);
+             if (!isInline) {
+              if (shouldIgnoreMirroredScroll(leftPane)) return;
+              syncScroll(leftPane, rightPane);
+             }
              updateBreadcrumbs(leftPane, leftBreadcrumbs);
         });
 
         rightPane.addEventListener('scroll', () => {
-             if (!isInline) syncScroll(rightPane, leftPane);
+             if (!isInline) {
+              if (shouldIgnoreMirroredScroll(rightPane)) return;
+              syncScroll(rightPane, leftPane);
+             }
              updateBreadcrumbs(rightPane, rightBreadcrumbs);
         });
 
@@ -3453,13 +3677,13 @@ export function getWebviewContent(
                     break;
                 case 'syncScroll':
                     const ratio = message.ratio;
-                    if (ratio !== undefined && !isScrolling) {
-                        isScrolling = true;
+                  if (ratio !== undefined) {
                         const leftTarget = ratio * (leftPane.scrollHeight - leftPane.clientHeight);
                         const rightTarget = ratio * (rightPane.scrollHeight - rightPane.clientHeight);
                         leftPane.scrollTop = leftTarget;
                         rightPane.scrollTop = rightTarget;
-                        setTimeout(() => isScrolling = false, 50);
+                    markMirroredScroll(leftPane);
+                    markMirroredScroll(rightPane);
                     }
                     break;
                 case 'receiveBlockSource':
@@ -3577,13 +3801,284 @@ export function getWebviewContent(
                 this.activeInfo = null;
             }
         };
-        if (typeof mermaid !== 'undefined') {
-            mermaid.initialize({ 
-                startOnLoad: true, 
-                securityLevel: 'strict',
-                nonce: '${nonce}'
-            });
-        }
+        const getCssVar = (name, fallback = '') => {
+          const bodyValue = getComputedStyle(document.body).getPropertyValue(name).trim();
+          if (bodyValue) {
+            return bodyValue;
+          }
+
+          const rootValue = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+          return rootValue || fallback;
+        };
+
+        const toMermaidHexColor = (value, fallback) => {
+          const normalizedFallback = (fallback || '').trim().toLowerCase();
+          const normalizedValue = (value || '').trim().toLowerCase();
+
+          const expandShortHex = (hex) =>
+            '#' + hex
+              .slice(1)
+              .split('')
+              .map(char => char + char)
+              .join('');
+
+          const toHexByte = (component) => {
+            const clamped = Math.max(0, Math.min(255, Math.round(component)));
+            return clamped.toString(16).padStart(2, '0');
+          };
+
+          if (/^#[0-9a-f]{6}$/i.test(normalizedValue)) {
+            return normalizedValue;
+          }
+          if (/^#[0-9a-f]{3}$/i.test(normalizedValue)) {
+            return expandShortHex(normalizedValue);
+          }
+          if (/^#[0-9a-f]{8}$/i.test(normalizedValue)) {
+            return '#' + normalizedValue.slice(1, 7);
+          }
+
+          const rgbParts = normalizedValue.match(/[\d.]+/g);
+          if (rgbParts && rgbParts.length >= 3) {
+            return '#' + rgbParts.slice(0, 3).map(part => toHexByte(Number(part))).join('');
+          }
+
+          if (/^#[0-9a-f]{6}$/i.test(normalizedFallback)) {
+            return normalizedFallback;
+          }
+          if (/^#[0-9a-f]{3}$/i.test(normalizedFallback)) {
+            return expandShortHex(normalizedFallback);
+          }
+
+          return normalizedFallback || '#000000';
+        };
+
+        const mixMermaidHexColors = (baseColor, overlayColor, ratio) => {
+          const clampRatio = Math.max(0, Math.min(1, ratio));
+          const parseHexColor = (hex) => [1, 3, 5].map(index =>
+            Number.parseInt(hex.slice(index, index + 2), 16),
+          );
+          const toHexColor = (channels) =>
+            '#' + channels.map(channel => channel.toString(16).padStart(2, '0')).join('');
+
+          const base = parseHexColor(baseColor);
+          const overlay = parseHexColor(overlayColor);
+          const mixed = base.map((value, index) =>
+            Math.round(value + (overlay[index] - value) * clampRatio),
+          );
+
+          return toHexColor(mixed);
+        };
+
+        const mermaidStyleNonce = '${nonce}';
+
+        const createMermaidConfig = () => {
+          const isDarkMode = typeof window.matchMedia === 'function' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const editorBackground = toMermaidHexColor(
+            getCssVar('--vscode-editor-background', isDarkMode ? '#1e1e1e' : '#ffffff'),
+            isDarkMode ? '#1e1e1e' : '#ffffff',
+          );
+          const foreground = toMermaidHexColor(
+            getCssVar(
+              '--markdown-foreground',
+              getCssVar('--vscode-editor-foreground', isDarkMode ? '#d4d4d4' : '#333333'),
+            ),
+            isDarkMode ? '#d4d4d4' : '#333333',
+          );
+          const raisedBackground = mixMermaidHexColors(
+            editorBackground,
+            foreground,
+            isDarkMode ? 0.16 : 0.05,
+          );
+          const clusteredBackground = mixMermaidHexColors(
+            editorBackground,
+            foreground,
+            isDarkMode ? 0.08 : 0.025,
+          );
+          const border = toMermaidHexColor(
+            getCssVar('--vscode-panel-border', isDarkMode ? '#454545' : '#cccccc'),
+            isDarkMode ? '#454545' : '#cccccc',
+          );
+          const muted = toMermaidHexColor(
+            getCssVar('--vscode-descriptionForeground', isDarkMode ? '#8b949e' : '#707070'),
+            isDarkMode ? '#8b949e' : '#707070',
+          );
+          const fontFamily = getCssVar('--vscode-font-family', 'Segoe UI, sans-serif');
+
+          return {
+            startOnLoad: false,
+            securityLevel: 'strict',
+            nonce: mermaidStyleNonce,
+            theme: 'base',
+            themeVariables: {
+              darkMode: isDarkMode,
+              background: editorBackground,
+              primaryColor: raisedBackground,
+              primaryTextColor: foreground,
+              primaryBorderColor: border,
+              secondaryColor: clusteredBackground,
+              secondaryTextColor: foreground,
+              secondaryBorderColor: border,
+              tertiaryColor: clusteredBackground,
+              tertiaryTextColor: foreground,
+              tertiaryBorderColor: border,
+              mainBkg: raisedBackground,
+              secondBkg: clusteredBackground,
+              tertiaryBkg: clusteredBackground,
+              textColor: foreground,
+              lineColor: muted,
+              defaultLinkColor: muted,
+              edgeLabelBackground: editorBackground,
+              clusterBkg: clusteredBackground,
+              clusterBorder: border,
+              titleColor: foreground,
+              nodeBorder: border,
+              nodeTextColor: foreground,
+              actorBorder: border,
+              actorBkg: raisedBackground,
+              actorTextColor: foreground,
+              actorLineColor: border,
+              labelTextColor: foreground,
+              labelColor: foreground,
+              labelBoxBkgColor: editorBackground,
+              labelBoxBorderColor: border,
+              noteBkgColor: raisedBackground,
+              noteBorderColor: border,
+              noteTextColor: foreground,
+              loopTextColor: foreground,
+              signalColor: foreground,
+              signalTextColor: foreground,
+              sectionBkgColor: editorBackground,
+              altSectionBkgColor: raisedBackground,
+              gridColor: border,
+              classText: foreground,
+              cScale0: raisedBackground,
+              cScale1: editorBackground,
+              cScale2: raisedBackground,
+              cScale3: editorBackground,
+              cScale4: raisedBackground,
+              cScale5: editorBackground,
+              cScale6: raisedBackground,
+              cScale7: editorBackground,
+              cScale8: raisedBackground,
+              cScale9: editorBackground,
+              cScale10: raisedBackground,
+              cScale11: editorBackground,
+              cScalePeer1: raisedBackground,
+              cScalePeer2: editorBackground,
+              fontFamily,
+            },
+            themeCSS: [
+              'svg { background-color: transparent; }',
+              '.label text, .nodeLabel, .edgeLabel, .cluster-label text, .label, .messageText, .loopText, .noteText, text, tspan {',
+              '  fill: ' + foreground + ' !important;',
+              '  color: ' + foreground + ' !important;',
+              '}',
+              '.node rect, .node circle, .node ellipse, .node polygon, .node path, .label-container, .classBox, .actor {',
+              '  fill: ' + raisedBackground + ' !important;',
+              '  stroke: ' + border + ' !important;',
+              '}',
+              '.cluster rect, .cluster polygon, .cluster path, .cluster line {',
+              '  fill: ' + clusteredBackground + ' !important;',
+              '  stroke: ' + border + ' !important;',
+              '}',
+              '.edgePath .path, .flowchart-link, .relationshipLine, .messageLine0, .messageLine1 {',
+              '  stroke: ' + muted + ' !important;',
+              '  fill: none !important;',
+              '}',
+              '.marker path, .arrowheadPath {',
+              '  stroke: ' + muted + ' !important;',
+              '  fill: ' + muted + ' !important;',
+              '}',
+              '.edgeLabel rect, .labelBox {',
+              '  fill: ' + editorBackground + ' !important;',
+              '  stroke: ' + border + ' !important;',
+              '}',
+              '.edgeLabel .label, .labelBox {',
+              '  background-color: ' + editorBackground + ' !important;',
+              '  color: ' + foreground + ' !important;',
+              '}',
+              'foreignObject {',
+              '  overflow: visible !important;',
+              '}',
+              '.labelBkg, .edgeLabel, .node .label, .cluster .label, foreignObject div, .nodeLabel, .nodeLabel p {',
+              '  background-color: transparent !important;',
+              '  color: ' + foreground + ' !important;',
+              '  overflow: visible !important;',
+              '  padding-right: 1px;',
+              '  box-sizing: border-box;',
+              '}',
+            ].join('\\n'),
+          };
+        };
+
+        const initializeMermaid = () => {
+          if (typeof mermaid === 'undefined') {
+            return;
+          }
+
+          mermaid.initialize(createMermaidConfig());
+        };
+
+        const setMermaidSvgContent = (container, svgMarkup) => {
+          if (typeof svgMarkup !== 'string' || svgMarkup.trim() === '') {
+            container.replaceChildren();
+            return;
+          }
+
+          const template = document.createElement('template');
+          template.innerHTML = svgMarkup.trim();
+          template.content.querySelectorAll('style').forEach((styleEl) => {
+            styleEl.setAttribute('nonce', mermaidStyleNonce);
+          });
+          container.replaceChildren(template.content.cloneNode(true));
+        };
+
+        const renderMermaidDiagrams = async (container = document) => {
+          if (typeof mermaid === 'undefined') {
+            return;
+          }
+
+          const mermaidBlocks = Array.from(
+            container.querySelectorAll('.mermaid[data-original-content]'),
+          );
+
+          if (mermaidBlocks.length === 0) {
+            return;
+          }
+
+          const renderJobs = mermaidBlocks.map((el, index) => {
+            const original = el.getAttribute('data-original-content');
+            if (!original) {
+              return Promise.resolve();
+            }
+
+            el.removeAttribute('data-processed');
+
+            return Promise.resolve(
+              mermaid.render('rich-markdown-diff-mermaid-' + Date.now() + '-' + index, original),
+            )
+              .then((result) => {
+                if (typeof result === 'string') {
+                  setMermaidSvgContent(el, result);
+                  return;
+                }
+
+                setMermaidSvgContent(el, result.svg);
+                if (typeof result.bindFunctions === 'function') {
+                  result.bindFunctions(el);
+                }
+              })
+              .catch((error) => {
+                console.error('Mermaid render failed', error);
+              });
+          });
+
+          await Promise.allSettled(renderJobs);
+        };
+
+        initializeMermaid();
+        void renderMermaidDiagrams();
 
         // Global resize listener to refresh image layouts
         window.addEventListener('resize', () => {

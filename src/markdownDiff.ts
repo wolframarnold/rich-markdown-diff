@@ -44,6 +44,17 @@ import {
   lcsAlignment,
 } from "./markdown/structuralDiff";
 
+function wrapTablesForScrolling(html: string): string {
+  if (!html.includes("<table")) {
+    return html;
+  }
+
+  return html.replace(
+    /<table\b[\s\S]*?<\/table>/gi,
+    (tableHtml) => `<div class="table-scroll">${tableHtml}</div>`,
+  );
+}
+
 /**
  * Provides functionality to compute and render differences between Markdown documents.
  * It uses `markdown-it` for rendering and `htmldiff-js` for computing HTML-level differences.
@@ -106,14 +117,12 @@ export class MarkdownDiffProvider {
 
     let bodyDiffHtml: string;
     const envNew = { imageResolver, docId: "new" };
-
     if (isMarp && this.marp) {
       const { html: oHtml, css: cssOld } = this.marp.render(
         oldMarkdown,
         envOld,
       );
       const { cleaned: cleanedOld, scripts: scriptsOld } = cleanMarpHtml(oHtml);
-
       const { html: nHtml, css: cssNew } = this.marp.render(
         newMarkdown,
         envNew,
@@ -260,7 +269,7 @@ export class MarkdownDiffProvider {
       // @ts-ignore
       const execute =
         htmldiff.execute || (htmldiff as any).default?.execute || htmldiff;
-        
+
       const renderedOld = sanitizeHtml(this.md.render(oldMatter.content, envOld));
       const renderedNew = sanitizeHtml(this.md.render(newMatter.content, envNew));
       const { diff: diffHtml } = executeWithFullPipeline(
@@ -331,7 +340,6 @@ export class MarkdownDiffProvider {
 
     return { html: fmHtml + bodyDiffHtml, marpCss, marpJs, hasDiff };
   }
-
   /**
    * Generates the full HTML content for the webview.
    *
@@ -364,12 +372,12 @@ export class MarkdownDiffProvider {
       original?: any;
       modified?: any;
     },
-    showGutterMarkers: boolean = true,
+    showGutterMarkers: boolean = false,
     showGitBlame: boolean = true,
     lineHoverDelay: number = 500,
   ): string {
     return getWebviewContent(
-      diffHtml,
+      wrapTablesForScrolling(diffHtml),
       katexCssInline,
       mermaidJsUri,
       hljsLightCssUri,
