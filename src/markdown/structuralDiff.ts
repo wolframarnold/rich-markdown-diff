@@ -1561,8 +1561,49 @@ export function consolidateBlockDiffs(html: string): string {
   return result;
 }
 
+function ensureDiffBlockClass(
+  attrs: string,
+  defaultDiffClass: "diffins" | "diffdel",
+): string {
+  const classAttrRegex = /\bclass=(["'])([^"']*)\1/i;
+  const classMatch = attrs.match(classAttrRegex);
+  if (!classMatch) {
+    return `${attrs} class="${defaultDiffClass} diff-block"`;
+  }
+
+  if (/\bdiff-block\b/.test(classMatch[2])) {
+    return attrs;
+  }
+
+  const updatedClasses = `${classMatch[2]} diff-block`.trim();
+  return attrs.replace(
+    classAttrRegex,
+    `class=${classMatch[1]}${updatedClasses}${classMatch[1]}`,
+  );
+}
+
 export function normalizeMathBlockDiffs(html: string): string {
-  return html.replace(
+  const normalizeWrappedMathBlocks = (
+    source: string,
+    tag: "ins" | "del",
+    defaultDiffClass: "diffins" | "diffdel",
+  ) =>
+    source.replace(
+      new RegExp(
+        `<${tag}([^>]*)>\\s*(<p[^>]*class=(["'])[^"']*katex-block[^"']*\\2[^>]*>[\\s\\S]*?<\\/p>)\\s*<\\/${tag}>`,
+        "gi",
+      ),
+      (_match, attrs: string, block: string) =>
+        `<${tag}${ensureDiffBlockClass(attrs, defaultDiffClass)}>${cleanInnerDiffTags(block, tag)}</${tag}>`,
+    );
+
+  const normalizedWrappedBlocks = normalizeWrappedMathBlocks(
+    normalizeWrappedMathBlocks(html, "ins", "diffins"),
+    "del",
+    "diffdel",
+  );
+
+  return normalizedWrappedBlocks.replace(
     /<p[^>]*class=("|')[^"']*katex-block[^"']*\1[^>]*>[\s\S]*?<\/p>/gi,
     (match) => {
       const hasIns = /<ins\b[^>]*>([\s\S]*?)<\/ins>/gi.test(match);

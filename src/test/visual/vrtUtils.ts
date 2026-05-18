@@ -46,7 +46,8 @@ export async function generateVRTHtml(
     // Resolve any path that doesn't look like a URL
     if (!src.includes("://") && !src.startsWith("data:")) {
       return (
-        "file://" + path.resolve(path.join(__dirname, "../../../fixtures"), src)
+        "file:///" +
+        path.resolve(path.join(__dirname, "../../../fixtures"), src).replace(/\\/g, "/")
       );
     }
     return src;
@@ -225,23 +226,32 @@ export async function generateVRTHtml(
       };
       
       // Wait for fonts to load to prevent flakiness in VRT
+      const markFontsLoaded = () => {
+        const apply = () => document.body && document.body.classList.add('fonts-loaded');
+        if (document.body) {
+          apply();
+        } else {
+          window.addEventListener('DOMContentLoaded', apply, { once: true });
+        }
+      };
+
       if (document.fonts) {
         console.log(' - waiting for fonts to load...');
         document.fonts.ready.then(() => {
           console.log(' - fonts loaded');
-          document.body.classList.add('fonts-loaded');
+          markFontsLoaded();
         }).catch(err => {
           console.error(' - font load error:', err);
-          document.body.classList.add('fonts-loaded');
+          markFontsLoaded();
         });
       } else {
-        document.body.classList.add('fonts-loaded');
+        markFontsLoaded();
       }
 
       // Safety fallback to unblock baseline updates
       setTimeout(() => {
           document.body.setAttribute('data-marp-scaled', 'true');
-          document.body.classList.add('fonts-loaded');
+          markFontsLoaded();
       }, 5000);
     </script>
   </head>`,

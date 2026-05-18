@@ -459,36 +459,6 @@ export function getWebviewContent(
             background-color: transparent;
         }
 
-        /* Blame Tooltip */
-        .blame-tooltip {
-            position: absolute;
-            z-index: 1000;
-            background-color: var(--vscode-editorWidget-background);
-            color: var(--vscode-editorWidget-foreground);
-            border: 1px solid var(--vscode-editorWidget-border);
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            line-height: 1.4;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            pointer-events: none;
-            max-width: 280px;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.15s ease;
-        }
-        .blame-tooltip .blame-author { font-weight: 600; color: var(--vscode-textLink-foreground); }
-        .blame-tooltip .blame-date { opacity: 0.7; margin-left: 8px; }
-        .blame-tooltip .blame-msg { margin-top: 4px; display: block; border-top: 1px solid rgba(127, 127, 127, 0.2); padding-top: 4px; }
-
-        /* Hover feedback for Blame info */
-        body.show-git-blame [data-line] {
-            transition: background-color 0.1s ease;
-        }
-        body.show-git-blame [data-line].hover-focused {
-            cursor: help;
-            background-color: var(--vscode-editor-hoverHighlightBackground, rgba(127, 127, 127, 0.1));
-        }
         /* Ensure alerts don't inherit or double-up on blockquote borders */
         .markdown-alert {
             border-left: 0.25em solid;
@@ -1248,17 +1218,6 @@ export function getWebviewContent(
             z-index: 10;
         }
 
-        /* Ensure list items and other blocks show full-width highlight when they contain a selected change */
-        :is(li, dt, dd, tr):has(.selected-change) {
-            background-color: rgba(255, 200, 0, 0.3) !important;
-            box-shadow: 0 0 0 3px rgba(255, 200, 0, 0.8);
-            border-radius: 2px;
-        }
-        /* Suppress the inner highlight if the container is already highlighted */
-        :is(li, dt, dd, tr):has(.selected-change) .selected-change {
-            background-color: transparent !important;
-            box-shadow: none !important;
-        }
         .selected-change.selected-ins {
           background-color: rgba(34, 197, 94, 0.25) !important;
           box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.8);
@@ -1312,47 +1271,6 @@ export function getWebviewContent(
           box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.45) !important;
         }
 
-        /* Simplified Quick Edit Styles: 
-           Exclude content within <del> tags (v1-only) as it's not editable. 
-           In Split mode, #right-pane only has v2 anyway, but in Inline mode it has both. */
-        #right-pane [data-line]:not(del [data-line]):not(del).hover-focused {
-            outline: 2px dashed rgba(255, 165, 0, 0.4);
-            outline-offset: 2px;
-            cursor: pointer;
-            position: relative;
-        }
-
-        /* Table-specific Fix: structural tags should not be position:relative 
-           as it disrupts table layout in some browsers. Also avoid pseudo-elements 
-           on tr/table as they are treated as children and break column alignment. */
-        #right-pane :is(table, thead, tbody, tr)[data-line].hover-focused {
-            position: static !important;
-        }
-        #right-pane :is(table, thead, tbody, tr)[data-line].hover-focused::before {
-            display: none !important;
-        }
-
-        /* Group GitHub Alerts as a single unit for Quick Edit */
-        .markdown-alert.hover-focused [data-line] {
-            outline: none !important;
-        }
-        .markdown-alert.hover-focused [data-line]::before {
-            display: none !important;
-        }
-
-        #right-pane [data-line]:not(del [data-line]):not(del).hover-focused::before {
-            content: "✎ Line " attr(data-line);
-            position: absolute;
-            top: -18px;
-            right: 0;
-            background-color: rgba(255, 165, 0, 0.8);
-            color: white;
-            font-size: 10px;
-            padding: 0 4px;
-            border-radius: 2px;
-            pointer-events: none;
-            z-index: 100;
-        }
         .block-editor-overlay {
             position: absolute;
             z-index: 10000;
@@ -1776,10 +1694,10 @@ export function getWebviewContent(
     <div class="overview-ruler" id="left-overview-ruler"></div>
     <div class="overview-ruler" id="right-overview-ruler"></div>
     <script nonce="${nonce}">
-        window.vscode = acquireVsCodeApi();
+        const vscode = acquireVsCodeApi();
+        window.vscode = vscode;
     </script>
     <script nonce="${nonce}">
-        const vscode = window.vscode;
         const blameInfo = ${JSON.stringify(blameInfo || {})};
         const lineHoverDelay = ${lineHoverDelay};
         const translations = ${JSON.stringify(translations)};
@@ -1789,6 +1707,13 @@ export function getWebviewContent(
                 text = text.replace('{' + i + '}', String(arg));
             });
             return text;
+        };
+
+        const isGitBlameEnabled = () => {
+            if (!document.body.classList.contains('show-git-blame')) {
+                return false;
+            }
+            return true;
         };
 
         const leftPane = document.getElementById('left-pane');
@@ -2620,82 +2545,6 @@ export function getWebviewContent(
         leftRuler.addEventListener('click', (e) => handleRulerClick(e, leftPane));
         rightRuler.addEventListener('click', (e) => handleRulerClick(e, rightPane));
 
-        // --- Blame Tooltip Logic ---
-        const tooltip = document.getElementById('blame-tooltip');
-        let tooltipTimeout;
-        let hoverTimeout;
-
-        const showBlame = (e) => {
-            // Ignore interactive areas
-            if (e.target.closest('.image-diff-controls') || e.target.closest('.toolbar') || e.target.closest('.breadcrumbs-bar')) {
-                return;
-            }
-
-            const el = e.currentTarget;
-            const line = el.getAttribute('data-line');
-            if (line === null) return;
-
-            clearTimeout(hoverTimeout);
-            hoverTimeout = setTimeout(() => {
-                // Apply focus class to trigger CSS effects (highlight, edit indicator)
-                el.classList.add('hover-focused');
-                const alert = el.closest('.markdown-alert');
-                if (alert) alert.classList.add('hover-focused');
-
-                // Check if Git Blame is enabled via setting class on body
-                if (!document.body.classList.contains('show-git-blame')) {
-                    return;
-                }
-
-                const pane = el.closest('#left-pane') ? 'original' : 'modified';
-                const info = blameInfo[pane]?.lines?.[parseInt(line, 10) + 1]; // porcelain is 1-indexed
-
-                if (info) {
-                    clearTimeout(tooltipTimeout);
-                    const date = new Date(info.authorTime * 1000).toLocaleDateString();
-                    tooltip.innerHTML = \`<span class="blame-author">\${info.author}</span><span class="blame-date">\${date}</span><span class="blame-msg">\${info.summary}</span>\`;
-                    tooltip.style.display = 'block';
-                    
-                    // Position relative to mouse
-                    const x = Math.min(window.innerWidth - 300, e.clientX + 15);
-                    const y = e.clientY + 15;
-                    tooltip.style.left = x + 'px';
-                    tooltip.style.top = y + 'px';
-                    
-                    requestAnimationFrame(() => tooltip.style.opacity = '1');
-                }
-            }, lineHoverDelay);
-        };
-
-        const hideBlame = (e) => {
-            clearTimeout(hoverTimeout);
-            const el = e.currentTarget;
-            el.classList.remove('hover-focused');
-            const alert = el.closest('.markdown-alert');
-            if (alert) alert.classList.remove('hover-focused');
-
-            tooltip.style.opacity = '0';
-            tooltipTimeout = setTimeout(() => {
-                tooltip.style.display = 'none';
-            }, 150);
-        };
-
-        // Attach to all elements with data-line
-        const attachBlameEvents = () => {
-             document.querySelectorAll('[data-line]').forEach(el => {
-                 el.removeEventListener('mouseenter', showBlame);
-                 el.addEventListener('mouseenter', showBlame);
-                 el.removeEventListener('mouseleave', hideBlame);
-                 el.addEventListener('mouseleave', hideBlame);
-             });
-        };
-
-        // MutationObserver is already looking at content, we can trigger re-attach there or in layout refresh
-        const originalCollectChanges = collectChanges;
-        collectChanges = () => {
-            originalCollectChanges();
-            attachBlameEvents();
-        };
         // --- Layout Stability ---
         let resizeTimeout;
         let layoutRefreshTimeout;
@@ -3010,7 +2859,9 @@ export function getWebviewContent(
         const syncScroll = (sourcePane, targetPane) => {
             // Only sync if the source is the one being actively scrolled by user
             if (!activePane) activePane = sourcePane; 
-            if (activePane !== sourcePane) return;
+            if (activePane !== sourcePane) {
+                return;
+            }
 
               // Specialized sync for Marp slides
               if (document.body.classList.contains('marp-mode') && !isInline) {
@@ -4151,25 +4002,20 @@ export function getWebviewContent(
         }
       }, true);
 
+      // Initialize ruler visibility and breadcrumbs after all helpers are defined.
+      updateOverviewRulerVisibility();
+      updateBreadcrumbs(leftPane, leftBreadcrumbs);
+      updateBreadcrumbs(rightPane, rightBreadcrumbs);
+
       // IMMEDIATE SIGNAL FOR VRT (Ensure update-snapshots always proceeds)
       setTimeout(() => {
           document.body.setAttribute('data-marp-scaled', 'true');
       }, 500);
       window.__init_ok = true;
-    </script>
-    <script nonce="${nonce}">
-      // Initialize ruler visibility and breadcrumbs
-      updateOverviewRulerVisibility();
-      updateBreadcrumbs(leftPane, leftBreadcrumbs);
-      updateBreadcrumbs(rightPane, rightBreadcrumbs);
-
-      // Signal that the script has initialized successfully
-      if (window.__init_ok) {
-          try {
-              window.vscode.postMessage({ command: 'ready' });
-          } catch (e) {
-              console.error('Failed to send ready signal:', e);
-          }
+      try {
+          window.vscode.postMessage({ command: 'ready' });
+      } catch (e) {
+          console.error('Failed to send ready signal:', e);
       }
     </script>
     <script nonce="${nonce}">/* VRT_SCRIPT_PLACEHOLDER */</script>

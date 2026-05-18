@@ -12,6 +12,6 @@
   "rich-markdown-diff.category": "Markdown Diff",
   "rich-markdown-diff.customEditor.displayName": "Markdown Diff プレビュー",
   "rich-markdown-diff.showGutterMarkers.description": "ガター領域に垂直な差分マーカーを表示するかどうか。",
-  "rich-markdown-diff.showGitBlame.description": "比較対象ファイルの Git Blame メタデータを読み込み、ホバー時に作成者、日付、メッセージを表示するかどうか。",
+  "rich-markdown-diff.showGitBlame.description": "比較対象ファイルの Git Blame メタデータを読み込むかどうか。",
   "rich-markdown-diff.lineHoverDelay.description": "ホバー時に Git Blame や Quick Edit のインジケーターを表示するまでの遅延時間（ミリ秒）。"
 }

@@ -12,6 +12,6 @@
   "rich-markdown-diff.category": "Markdown Diff",
   "rich-markdown-diff.customEditor.displayName": "Markdown 差异预览",
   "rich-markdown-diff.showGutterMarkers.description": "是否在装订线区域显示垂直差分标记。",
-  "rich-markdown-diff.showGitBlame.description": "是否为比较的文件加载 Git Blame 元数据，并在悬停时显示作者、日期和消息。",
+  "rich-markdown-diff.showGitBlame.description": "是否为比较的文件加载 Git Blame 元数据。",
   "rich-markdown-diff.lineHoverDelay.description": "悬停后显示 Git Blame 和快速编辑指示器前的延迟时间（毫秒）。"
 }
