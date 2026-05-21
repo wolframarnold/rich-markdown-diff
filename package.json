@@ -287,28 +287,28 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.60.0",
     "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.8.0",
     "@types/sanitize-html": "^2.16.1",
     "@types/vscode": "1.80.0",
-    "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.59.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "@vscode/l10n-dev": "^0.0.35",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "eslint-plugin-jsdoc": "^62.9.0",
     "glob": "^13.0.6",
     "globals": "^17.6.0",
     "mocha": "^11.7.5",
-    "ovsx": "^0.10.11",
-    "playwright": "^1.59.1",
+    "ovsx": "^0.10.12",
+    "playwright": "^1.60.0",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1"
+    "typescript-eslint": "^8.59.3"
   },
   "dependencies": {
     "@iktakahiro/markdown-it-katex": "^4.0.1",
@@ -326,7 +326,7 @@
     "markdown-it-sub": "^2.0.0",
     "markdown-it-sup": "^2.0.0",
     "markdown-it-task-lists": "^2.1.1",
-    "sanitize-html": "^2.17.3"
+    "sanitize-html": "^2.17.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
