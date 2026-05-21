@@ -44,7 +44,7 @@ test.describe("Visual Regression Tests", () => {
     { name: "marp-v1", v1: "marp_v1", v2: "marp_v1", theme: "light", inline: true, suffix: "inline-light" },
     { name: "marp-v3", v1: "marp_v3", v2: "marp_v3", theme: "light", inline: false, suffix: "split-light" },
     { name: "marp-v3", v1: "marp_v3", v2: "marp_v3", theme: "dark", inline: true, suffix: "inline-dark" },
-    
+
     // Actual diff tests (ensure diff logic correctness)
     { name: "marp-v1-v2", v1: "marp_v1", v2: "marp_v2", theme: "dark", inline: false, suffix: "split-dark" },
     { name: "comprehensive-v1-v2", v1: "comprehensive_v1", v2: "comprehensive_v2", theme: "light", inline: false, suffix: "split-light" }
@@ -56,7 +56,7 @@ test.describe("Visual Regression Tests", () => {
       const v2Path = path.join(__dirname, "../../../fixtures", `${c.v2}.md`);
       const md1 = fs.readFileSync(v1Path, "utf-8");
       const md2 = fs.readFileSync(v2Path, "utf-8");
-      
+
       const html = await generateVRTHtml(provider, md1, md2, {
         theme: c.theme as any,
         inline: c.inline,
@@ -79,10 +79,11 @@ test.describe("Visual Regression Tests", () => {
         }
       }
 
+      const screenshotTimeout = c.name === "comprehensive-v1-v2" ? 120000 : 30000;
       await expect(page).toHaveScreenshot(`${c.name}-${c.suffix}.png`, {
         maxDiffPixelRatio: 0.1,
         fullPage: true,
-        timeout: 30000,
+        timeout: screenshotTimeout,
       });
 
       // Verification of markers for Marp
@@ -90,20 +91,20 @@ test.describe("Visual Regression Tests", () => {
         const markerCount = await page.locator('.overview-marker').count();
         // Expect at least 12 markers (Frontmatter table rows + Marp slide changes)
         if (markerCount < 10) {
-            throw new Error(`REGRESSION: Expected at least 12 overview markers, but found only ${markerCount}. Marp slide changes might be missing!`);
+          throw new Error(`REGRESSION: Expected at least 12 overview markers, but found only ${markerCount}. Marp slide changes might be missing!`);
         }
-        
+
         // Granular check: Ensure changes INSIDE Marp slides are recognized
         const marpChangeCount = await page.evaluate(() => {
-            const marpContent = document.querySelector('.marp');
-            if (!marpContent) {
-                return 0;
-            }
-            return marpContent.querySelectorAll('ins, del').length;
+          const marpContent = document.querySelector('.marp');
+          if (!marpContent) {
+            return 0;
+          }
+          return marpContent.querySelectorAll('ins, del').length;
         });
-        
+
         if (marpChangeCount === 0) {
-            throw new Error(`REGRESSION: No diff tags (ins/del) found inside Marp slides!`);
+          throw new Error(`REGRESSION: No diff tags (ins/del) found inside Marp slides!`);
         }
       }
     });

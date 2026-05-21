@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+import { findClosing } from "./domUtils";
+
 /**
  * Performs a structural diff between two HTML tables.
  * This method aligns rows and columns to prevent content "drift" when table structure changes.
@@ -76,62 +78,154 @@ export function parseTable(html: string) {
 
   // Extract thead
   const theadStart = html.search(/<thead/i);
-  const theadEnd = html.search(/<\/thead>/i);
-  if (theadStart !== -1 && theadEnd !== -1) {
-    const theadContent = html.substring(theadStart, theadEnd + 8);
-    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    let trMatch;
-    while ((trMatch = trRegex.exec(theadContent)) !== null) {
-      const thRegex = /<th[^>]*>([\s\S]*?)<\/th>/gi;
-      let thMatch;
-      while ((thMatch = thRegex.exec(trMatch[1])) !== null) {
-        const info = getInner(thMatch[0], "th");
-        if (info) {
-          headers.push({ html: info.content, attrs: info.attrs });
+  if (theadStart !== -1) {
+    const theadEnd = findClosing(html, theadStart, "thead");
+    if (theadEnd !== -1) {
+      const theadFull = html.substring(theadStart, theadEnd);
+      let trPos = 0;
+      let trStartMatch;
+      while ((trStartMatch = theadFull.substring(trPos).match(/<tr\b[^>]*>/i)) !== null) {
+        if (!trStartMatch) {
+          break;
         }
+
+        const absoluteTrStart = trPos + trStartMatch.index!;
+        const trEnd = findClosing(theadFull, absoluteTrStart, "tr");
+        if (trEnd === -1) {
+          trPos = absoluteTrStart + 4;
+          continue;
+        }
+
+        const trFull = theadFull.substring(absoluteTrStart, trEnd);
+        let cellPos = 0;
+        while (true) {
+          const thStartMatch = trFull.substring(cellPos).match(/<th\b[^>]*>/i);
+          if (!thStartMatch) {break;}
+
+          const absoluteThStart = cellPos + thStartMatch.index!;
+          const thEnd = findClosing(trFull, absoluteThStart, "th");
+          if (thEnd === -1) {
+            cellPos = absoluteThStart + 4;
+            continue;
+          }
+
+          const thFull = trFull.substring(absoluteThStart, thEnd);
+          const info = getInner(thFull, "th");
+          if (info) {
+            headers.push({ html: info.content, attrs: info.attrs });
+          }
+          cellPos = thEnd;
+        }
+        trPos = trEnd;
       }
     }
   }
 
   // Extract tbody (support multiple tbodies)
-  const tbodyRegex = /<tbody[^>]*>([\s\S]*?)<\/tbody>/gi;
-  let tbodyMatch;
-  while ((tbodyMatch = tbodyRegex.exec(html)) !== null) {
-    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    let trMatch;
-    while ((trMatch = trRegex.exec(tbodyMatch[1])) !== null) {
-      const trAttrs = trMatch[0].match(/<tr([^>]*)>/i)?.[1] || "";
+  let searchStart = 0;
+  while (true) {
+    const tbodyStart = html.substring(searchStart).search(/<tbody/i);
+    if (tbodyStart === -1) {
+      break;
+    }
+
+    const absoluteTbodyStart = searchStart + tbodyStart;
+    const tbodyEnd = findClosing(html, absoluteTbodyStart, "tbody");
+    if (tbodyEnd === -1) {
+      searchStart = absoluteTbodyStart + 6;
+      continue;
+    }
+
+    const tbodyFull = html.substring(absoluteTbodyStart, tbodyEnd);
+    let trPos = 0;
+    while (true) {
+      const trStartMatch = tbodyFull.substring(trPos).match(/<tr\b[^>]*>/i);
+      if (!trStartMatch) {
+        break;
+      }
+
+      const absoluteTrStart = trPos + trStartMatch.index!;
+      const trEnd = findClosing(tbodyFull, absoluteTrStart, "tr");
+      if (trEnd === -1) {
+        trPos = absoluteTrStart + 4;
+        continue;
+      }
+
+      const trFull = tbodyFull.substring(absoluteTrStart, trEnd);
+      const trAttrs = trStartMatch[0].match(/<tr([^>]*)>/i)?.[1] || "";
       const cells: { html: string; attrs: string; tag: string }[] = [];
-      const tdRegex = /<(td|th)[^>]*>([\s\S]*?)<\/\1>/gi;
-      let tdMatch;
-      while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
-        const tag = tdMatch[1].toLowerCase();
-        const info = getInner(tdMatch[0], tag);
+
+      // Extract cells (td/th) inside this tr
+      let cellPos = 0;
+      while (true) {
+        const cellStartMatch = trFull.substring(cellPos).match(/<(td|th)\b[^>]*>/i);
+        if (!cellStartMatch) {break;}
+
+        const tag = cellStartMatch[1].toLowerCase();
+        const absoluteCellStart = cellPos + cellStartMatch.index!;
+        const cellEnd = findClosing(trFull, absoluteCellStart, tag);
+        if (cellEnd === -1) {
+          cellPos = absoluteCellStart + 4;
+          continue;
+        }
+
+        const cellFull = trFull.substring(absoluteCellStart, cellEnd);
+        const info = getInner(cellFull, tag);
         if (info) {
           cells.push({ html: info.content, attrs: info.attrs, tag });
         }
+        cellPos = cellEnd;
       }
+
       rows.push({ cells, attrs: trAttrs });
+      trPos = trEnd;
     }
+    searchStart = tbodyEnd;
   }
 
   // Fallback: If no tbody/thead found, try to extract tr directly from table
   if (rows.length === 0 && headers.length === 0) {
-    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    let trMatch;
-    while ((trMatch = trRegex.exec(html)) !== null) {
-      const trAttrs = trMatch[0].match(/<tr([^>]*)>/i)?.[1] || "";
+    let trPos = 0;
+    while (true) {
+      const trStartMatch = html.substring(trPos).match(/<tr\b[^>]*>/i);
+      if (!trStartMatch) {
+        break;
+      }
+
+      const absoluteTrStart = trPos + trStartMatch.index!;
+      const trEnd = findClosing(html, absoluteTrStart, "tr");
+      if (trEnd === -1) {
+        trPos = absoluteTrStart + 4;
+        continue;
+      }
+
+      const trFull = html.substring(absoluteTrStart, trEnd);
+      const trAttrs = trStartMatch[0].match(/<tr([^>]*)>/i)?.[1] || "";
       const cells: { html: string; attrs: string; tag: string }[] = [];
-      const tdRegex = /<(td|th)[^>]*>([\s\S]*?)<\/\1>/gi;
-      let tdMatch;
-      while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
-        const tag = tdMatch[1].toLowerCase();
-        const info = getInner(tdMatch[0], tag);
+
+      let cellPos = 0;
+      while (true) {
+        const cellStartMatch = trFull.substring(cellPos).match(/<(td|th)\b[^>]*>/i);
+        if (!cellStartMatch) {break;}
+
+        const tag = cellStartMatch[1].toLowerCase();
+        const absoluteCellStart = cellPos + cellStartMatch.index!;
+        const cellEnd = findClosing(trFull, absoluteCellStart, tag);
+        if (cellEnd === -1) {
+          cellPos = absoluteCellStart + 4;
+          continue;
+        }
+
+        const cellFull = trFull.substring(absoluteCellStart, cellEnd);
+        const info = getInner(cellFull, tag);
         if (info) {
           cells.push({ html: info.content, attrs: info.attrs, tag });
         }
+        cellPos = cellEnd;
       }
+
       rows.push({ cells, attrs: trAttrs });
+      trPos = trEnd;
     }
   }
 
@@ -175,8 +269,8 @@ export function alignColumns(
   });
 
   return mapping.sort((a, b) => {
-    const aVal = a.newIdx !== null ? a.newIdx : 1000 + (a.oldIdx || 0);
-    const bVal = b.newIdx !== null ? b.newIdx : 1000 + (b.oldIdx || 0);
+    const aVal = a.newIdx !== null ? a.newIdx : 1000 + (a.oldIdx ?? 0);
+    const bVal = b.newIdx !== null ? b.newIdx : 1000 + (b.oldIdx ?? 0);
     return aVal - bVal;
   });
 }
@@ -241,7 +335,11 @@ export function alignRows(
     }
   });
 
-  return mapping.sort((a, b) => (a.newIdx ?? 1000) - (b.newIdx ?? 1000));
+  return mapping.sort((a, b) => {
+    const aVal = a.newIdx !== null ? a.newIdx : 1000 + (a.oldIdx ?? 0);
+    const bVal = b.newIdx !== null ? b.newIdx : 1000 + (b.oldIdx ?? 0);
+    return aVal - bVal;
+  });
 }
 
 /**

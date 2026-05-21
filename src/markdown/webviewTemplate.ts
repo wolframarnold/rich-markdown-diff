@@ -57,7 +57,7 @@ export function getWebviewContent(
     original?: any;
     modified?: any;
   },
-  showGutterMarkers: boolean = false,
+  showGutterMarkers: boolean = true,
   showGitBlame: boolean = true,
   lineHoverDelay: number = 500,
 ): string {
@@ -886,6 +886,12 @@ export function getWebviewContent(
             display: block;
           width: fit-content;
           max-width: 100%;
+        }
+
+        /* Ensure math blocks in diffs are always full-width to allow centering */
+        :is(ins, del):has(> .katex-block),
+        :is(ins, del):has(> .katex-display) {
+            width: 100%;
         }
 
 
@@ -2202,6 +2208,21 @@ export function getWebviewContent(
         // --- Navigation Logic ---
         function collectChanges() {
             try {
+                // Helper to find data-line attribute by traversing up
+                const getElementLine = (el) => {
+                    if (!el) return null;
+                    if (el.getAttribute && el.getAttribute('data-line')) {
+                        return el.getAttribute('data-line');
+                    }
+                    return getElementLine(el.parentElement);
+                };
+
+                // Capture current selection state to preserve it across re-scans (e.g. after image loads)
+                const oldSelectedGroup = currentChangeIndex >= 0 ? changeElements[currentChangeIndex] : null;
+                const oldSelectedEl = (oldSelectedGroup && oldSelectedGroup.length > 0) ? (oldSelectedGroup[0].el || oldSelectedGroup[0]) : null;
+                const oldSelectedPane = (oldSelectedGroup && oldSelectedGroup.length > 0) ? oldSelectedGroup[0].pane : null;
+                const oldSelectedLine = oldSelectedEl ? getElementLine(oldSelectedEl) : null;
+
                 changeElements = [];
                 currentChangeIndex = -1;
                 statusMsg.textContent = t("Scanning...");
@@ -2390,7 +2411,59 @@ export function getWebviewContent(
                 if (currentGroup.length > 0) groups.push(currentGroup);
                 changeElements = groups;
                 
-                statusMsg.textContent = t("Found {0} groups", changeElements.length);
+                // Restore Selection
+                if (oldSelectedLine) {
+                    let newIndex = -1;
+                    for (let i = 0; i < changeElements.length; i++) {
+                        const match = changeElements[i].some(item => {
+                            const el = item.el || item;
+                            return item.pane === oldSelectedPane && getElementLine(el) === oldSelectedLine;
+                        });
+                        if (match) {
+                            newIndex = i;
+                            break;
+                        }
+                    }
+                    // Fallback to strict DOM element comparison if line matching fails
+                    if (newIndex === -1 && oldSelectedEl) {
+                        for (let i = 0; i < changeElements.length; i++) {
+                            if (changeElements[i].some(item => (item.el || item) === oldSelectedEl)) {
+                                newIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (newIndex >= 0) {
+                        currentChangeIndex = newIndex;
+                        // Re-apply highlight without scrolling
+                        changeElements[currentChangeIndex].forEach(item => {
+                            (item.el || item).classList.add('selected-change');
+                        });
+                        updateStatus();
+                    } else {
+                        statusMsg.textContent = t("Found {0} groups", changeElements.length);
+                    }
+                } else if (oldSelectedEl) {
+                    let newIndex = -1;
+                    for (let i = 0; i < changeElements.length; i++) {
+                        if (changeElements[i].some(item => (item.el || item) === oldSelectedEl)) {
+                            newIndex = i;
+                            break;
+                        }
+                    }
+                    if (newIndex >= 0) {
+                        currentChangeIndex = newIndex;
+                        // Re-apply highlight without scrolling
+                        changeElements[currentChangeIndex].forEach(item => {
+                            (item.el || item).classList.add('selected-change');
+                        });
+                        updateStatus();
+                    } else {
+                        statusMsg.textContent = t("Found {0} groups", changeElements.length);
+                    }
+                } else {
+                    statusMsg.textContent = t("Found {0} groups", changeElements.length);
+                }
                 statusMsg.style.color = '';
             } else {
                 statusMsg.textContent = t("No changes found");
