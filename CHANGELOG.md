@@ -2,6 +2,20 @@
 
 All notable changes to **Rich Markdown Diff** will be documented in this file.
 
+## [1.3.1] - 2026-MM-DD
+
+### Improved in 1.3.1
+
+- **Performance & Accuracy**: Chunk-based structural diffing dramatically improves rendering speed and accuracy for large documents.
+- **Table & Footnote Diffing**: Added a tag-aware parser for complex nested tables and a robust multi-pass match for footnotes.
+- **UI & Navigation**: Implemented theme-aware Mermaid rendering, dynamic horizontal scrolling for wide tables, smoother scroll sync, and active change navigation state preservation.
+- **Security Hardening**: Replaced internal git blame executions with secure, memory-efficient streaming APIs to block command-injection risks.
+
+### Fixed in 1.3.1
+
+- **KaTeX & Block Diffs**: Resolved math display bugs by securing formula structures from incorrect HTML nesting repairs and consolidating block-level equations correctly.
+- **CI & Dependency Setup**: Fixed version conflicts in the pnpm release workflow and resolved VS Code workspace compatibility issues.
+
 ## [1.3.0] - 2026-04-30
 
 ### Added in 1.3.0

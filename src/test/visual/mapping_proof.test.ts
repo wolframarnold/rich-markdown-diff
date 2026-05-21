@@ -21,12 +21,18 @@ test('mapping accuracy and scroll sync proof', async ({ page }) => {
     // Compare Old=v1, New=v2
     const diff = await provider.computeDiff(md1, md2);
 
+    const mediaDir = path.join(__dirname, '../../../media');
+    const katexCss = fs.readFileSync(path.join(mediaDir, 'katex/katex.min.css'), 'utf8');
+    const katexBase64 = Buffer.from(katexCss).toString('base64');
+
     const html = `
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <link rel="stylesheet" href="data:text/css;base64,${katexBase64}">
       <style>
-        body { font-family: sans-serif; margin: 0; padding: 0; }
+        body { font-family: sans-serif; margin: 0; padding: 0; background: white; }
         .diff-pane { width: 50%; float: left; height: 100vh; overflow: auto; border: 1px solid gray; box-sizing: border-box; }
         ins { background: #e6ffed; text-decoration: none; border: 1px solid green; }
         del { background: #ffeef0; text-decoration: line-through; color: #cf222e; border: 1px solid red; }
@@ -36,15 +42,19 @@ test('mapping accuracy and scroll sync proof', async ({ page }) => {
         #right-pane del { display: none !important; }
         
         .block-editor-overlay { position: fixed; top: 20%; left: 20%; width: 60%; height: 60%; background: white; border: 5px solid blue; z-index: 1000; padding: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        
-        /* KaTeX Support */
-        @import url('https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css');
       </style>
     </head>
     <body>
       <div id="left-pane" class="diff-pane">${diff.html}</div>
       <div id="right-pane" class="diff-pane">${diff.html}</div>
       <script>
+        // Mock VS Code API
+        window.acquireVsCodeApi = () => ({
+          postMessage: (msg) => { console.log('VSCode PostMessage:', msg); },
+          getState: () => ({}),
+          setState: () => {}
+        });
+
         document.querySelectorAll('[data-line]').forEach(el => {
           el.onclick = (e) => {
             e.stopPropagation();

@@ -30,7 +30,11 @@ import {
   tryGetGitApi,
 } from "./gitDiffResolver";
 import { resolveBlameInfo } from "./gitBlameResolver";
-import { getCommandTarget, getFileUriFromCommandArg, toFileBackedUri } from "./commandTarget";
+import {
+  getCommandTarget,
+  getFileUriFromCommandArg,
+  toFileBackedUri,
+} from "./commandTarget";
 import * as path from "path";
 import * as l10n from "@vscode/l10n";
 
@@ -54,7 +58,9 @@ let contextUpdateGeneration = 0;
 let lastCanShowRenderedDiff: boolean | undefined;
 let runtimeDiagnosticsChannel: vscode.OutputChannel | undefined;
 let isWebviewReadyForTesting = false; // Flag for health tests
-const openPanelUpdateHandlers = new Set<(trigger: DiffPanelUpdateTrigger) => void>();
+const openPanelUpdateHandlers = new Set<
+  (trigger: DiffPanelUpdateTrigger) => void
+>();
 
 const markdownExtensions = [
   ".md",
@@ -574,8 +580,12 @@ async function renderDiffPanel(
   const originalContent = await readDocumentText(state.originalUri);
   const modifiedContent = await readDocumentText(state.modifiedUri);
 
-  const originalBlame = state.originalUri ? await resolveBlameInfo(state.originalUri) : undefined;
-  const modifiedBlame = state.modifiedUri ? await resolveBlameInfo(state.modifiedUri) : undefined;
+  const originalBlame = state.originalUri
+    ? await resolveBlameInfo(state.originalUri)
+    : undefined;
+  const modifiedBlame = state.modifiedUri
+    ? await resolveBlameInfo(toFileBackedUri(state.modifiedUri))
+    : undefined;
 
   const contentKey = `${originalContent}\0${modifiedContent}\0${state.leftLabel}\0${state.rightLabel}`;
   if (lastContentKey !== undefined && contentKey === lastContentKey) {
@@ -596,7 +606,11 @@ async function renderDiffPanel(
   const showGitBlame = config.get<boolean>("showGitBlame", true);
   const lineHoverDelay = config.get<number>("lineHoverDelay", 500);
 
-  const { html: diffHtml, marpCss, marpJs } = diffProvider.computeDiff(
+  const {
+    html: diffHtml,
+    marpCss,
+    marpJs,
+  } = diffProvider.computeDiff(
     originalContent,
     modifiedContent,
     modifiedResolver,
@@ -829,25 +843,27 @@ async function bindDiffPanel(
           const edit = new vscode.WorkspaceEdit();
           const start = message.lineStart;
           const end = message.lineEnd;
-          
-          // Construct range. end is exclusive line in markdown-it, 
+
+          // Construct range. end is exclusive line in markdown-it,
           // but in VS Code Range, (start, 0) to (end, 0) means lines [start, end-1].
           // To replace full lines including trailing newline of the last line:
           const range = new vscode.Range(
             new vscode.Position(start, 0),
-            document.validatePosition(new vscode.Position(end, 0))
+            document.validatePosition(new vscode.Position(end, 0)),
           );
-          
+
           // Ensure newContent ends with newline if we replaced full lines
           let text = message.newContent;
           if (end < document.lineCount && !text.endsWith("\n")) {
             text += "\n";
           }
-          
+
           edit.replace(uri, range, text);
           await vscode.workspace.applyEdit(edit);
         } catch (e) {
-          vscode.window.showErrorMessage(l10n.t("Failed to apply edit: {0}", String(e)));
+          vscode.window.showErrorMessage(
+            l10n.t("Failed to apply edit: {0}", String(e)),
+          );
         }
       }
       return;
@@ -978,6 +994,43 @@ export function activate(context: vscode.ExtensionContext) {
     false,
   );
 
+  // Recommend Markdown Link Assistant extension once
+  const recommendKey = "rich-markdown-diff.recommendLinkAssistant";
+  const assistantId = "phine-apps.markdown-link-assistant";
+
+  if (
+    !vscode.extensions.getExtension(assistantId) &&
+    !context.globalState.get(recommendKey)
+  ) {
+    setTimeout(() => {
+      vscode.window
+        .showInformationMessage(
+          l10n.t(
+            "Enjoying Rich Markdown Diff? Try 'Markdown Link Assistant' to manage your links effortlessly.",
+          ),
+          l10n.t("Show Details"),
+          l10n.t("Later"),
+        )
+        .then((selection) => {
+          if (selection === l10n.t("Show Details")) {
+            vscode.commands.executeCommand("extension.open", assistantId).then(
+              undefined,
+              () => {
+                void vscode.env.openExternal(
+                  vscode.Uri.parse(
+                    `https://marketplace.visualstudio.com/items?itemName=${assistantId}`,
+                  ),
+                );
+              },
+            );
+          }
+          if (selection !== undefined) {
+            void context.globalState.update(recommendKey, true);
+          }
+        });
+    }, 5000);
+  }
+
   // Register Commands
 
   // Register Navigation Commands
@@ -991,12 +1044,15 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("rich-markdown-diff.prevChange", () => {
       activePanel?.webview.postMessage({ command: "prevChange" });
     }),
-    vscode.commands.registerCommand("rich-markdown-diff.getTestStatus", (key: string) => {
-      if (key === "webviewReady") {
-        return isWebviewReadyForTesting;
-      }
-      return false;
-    }),
+    vscode.commands.registerCommand(
+      "rich-markdown-diff.getTestStatus",
+      (key: string) => {
+        if (key === "webviewReady") {
+          return isWebviewReadyForTesting;
+        }
+        return false;
+      },
+    ),
   );
 
   context.subscriptions.push(
@@ -1399,13 +1455,13 @@ async function showTwoFilesDiff(
     originalUri && modifiedUri
       ? getMinimalPathForDisplay(originalUri.fsPath, modifiedUri.fsPath)
       : {
-          left: originalUri
-            ? path.basename(originalUri.fsPath)
-            : l10n.t("Empty"),
-          right: modifiedUri
-            ? path.basename(modifiedUri.fsPath)
-            : l10n.t("Empty"),
-        };
+        left: originalUri
+          ? path.basename(originalUri.fsPath)
+          : l10n.t("Empty"),
+        right: modifiedUri
+          ? path.basename(modifiedUri.fsPath)
+          : l10n.t("Empty"),
+      };
 
   await createAndBindDiffPanel(
     `Diff: ${minimalPaths.left} ↔ ${minimalPaths.right}`,
@@ -1436,7 +1492,7 @@ async function showTwoFilesDiff(
 class DiffEditorProvider implements vscode.CustomReadonlyEditorProvider {
   public static readonly viewType = "rich-markdown-diff.diffPreview";
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) { }
 
   /**
    * Creates a custom document for the given URI.
@@ -1445,7 +1501,7 @@ class DiffEditorProvider implements vscode.CustomReadonlyEditorProvider {
    * @returns A custom document object.
    */
   openCustomDocument(uri: vscode.Uri): vscode.CustomDocument {
-    return { uri, dispose: () => {} };
+    return { uri, dispose: () => { } };
   }
 
   /**
@@ -1469,4 +1525,4 @@ class DiffEditorProvider implements vscode.CustomReadonlyEditorProvider {
   }
 }
 
-export function deactivate() {}
+export function deactivate() { }

@@ -78,7 +78,6 @@ export function sanitizeHtml(html: string): string {
       "dt",
       "dd",
       "section",
-      "mark",
       // MathML tags (if used by KaTeX or others)
       "math",
       "semantics",

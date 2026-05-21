@@ -97,8 +97,9 @@ function obsidianPlugin(md: MarkdownIt, _options: ObsidianOptions = {}) {
       return false;
     }
 
-    const [pagePart] = rawContent.split("|", 2);
-    const pageName = pagePart.trim();
+    const parts = rawContent.split("|");
+    const pageName = parts[0].trim();
+    const alias = parts.length > 1 ? parts[1].trim() : "";
 
     if (!pageName) {
       return false;
@@ -112,10 +113,10 @@ function obsidianPlugin(md: MarkdownIt, _options: ObsidianOptions = {}) {
         const token = state.push("image", "img", 0);
         token.attrs = [
             ["src", pageName],
-            ["alt", ""],
+            ["alt", alias],
             ["class", "obsidian-embedded-image"]
         ];
-        token.children = []; // Ensure children exists for image rendering
+        token.children = [];
       } else {
         const token = state.push("obsidian_embed", "div", 0);
         token.attrs = [
@@ -133,17 +134,20 @@ function obsidianPlugin(md: MarkdownIt, _options: ObsidianOptions = {}) {
   md.renderer.rules.obsidian_tag = (tokens, idx) => {
     const token = tokens[idx];
     const tagContent = token.attrGet("data-tag") || "";
+    const escapedTagContent = md.utils.escapeHtml(tagContent);
+    const escapedContent = md.utils.escapeHtml(token.content);
     // We'll make it a clickable span
-    return `<span class="obsidian-tag" data-tag="${tagContent}">${token.content}</span>`;
+    return `<span class="obsidian-tag" data-tag="${escapedTagContent}">${escapedContent}</span>`;
   };
 
   // Renderer for embed
   md.renderer.rules.obsidian_embed = (tokens, idx) => {
     const token = tokens[idx];
     const pageName = token.attrGet("data-page") || "";
-    return `<div class="obsidian-embed" data-page="${pageName}">
+    const escapedPageName = md.utils.escapeHtml(pageName);
+    return `<div class="obsidian-embed" data-page="${escapedPageName}">
         <span class="obsidian-embed-icon">📄</span>
-        <span class="obsidian-embed-link">${pageName}</span>
+        <span class="obsidian-embed-link">${escapedPageName}</span>
     </div>`;
   };
 }
