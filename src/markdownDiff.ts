@@ -122,12 +122,14 @@ export class MarkdownDiffProvider {
         oldMarkdown,
         envOld,
       );
-      const { cleaned: cleanedOld, scripts: scriptsOld } = cleanMarpHtml(oHtml);
+      const { cleaned: cleanedOldRaw, scripts: scriptsOld } = cleanMarpHtml(oHtml);
+      const cleanedOld = sanitizeHtml(cleanedOldRaw);
       const { html: nHtml, css: cssNew } = this.marp.render(
         newMarkdown,
         envNew,
       );
-      const { cleaned: cleanedNew, scripts: scriptsNew } = cleanMarpHtml(nHtml);
+      const { cleaned: cleanedNewRaw, scripts: scriptsNew } = cleanMarpHtml(nHtml);
+      const cleanedNew = sanitizeHtml(cleanedNewRaw);
 
       // Resolve URLs in CSS
       const resolvedCssOld = resolveCssUrls(

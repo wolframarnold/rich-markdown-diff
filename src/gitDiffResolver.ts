@@ -146,7 +146,7 @@ function getModifiedWorkingTreeUri(
   if (workingChange || untrackedChange) {
     return targetUri;
   }
-  return targetUri;
+  return undefined;
 }
 
 function resolveWorkingTreeComparison(

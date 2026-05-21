@@ -123,7 +123,7 @@ export async function generateVRTHtml(
     marpCss,
     marpJs,
     options.blameInfo,
-    options.showGutterMarkers ?? false,
+    options.showGutterMarkers ?? true,
     options.showGitBlame ?? true,
   );
 

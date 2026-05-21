@@ -81,11 +81,16 @@ $$
 ## Mermaid Diagrams
 
 ```mermaid
-graph TD;
-    A-->B;
-    B-->C;
-    C-->D;
-    D-->E;
+graph TD
+    A[Start] --> B{Decision}
+    B -- Yes --> C[Process One]
+    B -- No --> D[Process Two]
+    C --> E[Branch A]
+    C --> F[Branch B]
+    D --> G[Branch C]
+    E --> H[End]
+    F --> H
+    G --> H
 ```
 
 ## GitHub Alerts

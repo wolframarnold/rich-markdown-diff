@@ -56,6 +56,12 @@ For technical setup or contribution guidelines, please see:
 - [DEVELOPMENT.md](DEVELOPMENT.md) - Architecture and local setup.
 - [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute.
 
+## Recommended Extensions
+
+If you enjoy **Rich Markdown Diff**, you might also like:
+
+- 🔗 **[Markdown Link Assistant](https://marketplace.visualstudio.com/items?itemName=phine-apps.markdown-link-assistant)**: The ultimate link manager for Visual Studio Code. Effortlessly transform raw URLs into beautiful, structured link previews and Notion-like cards with instant previews and AI summaries.
+
 ## License
 
 Licensed under the [MIT License](LICENSE).
