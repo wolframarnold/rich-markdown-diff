@@ -58,9 +58,6 @@ let contextUpdateGeneration = 0;
 let lastCanShowRenderedDiff: boolean | undefined;
 let runtimeDiagnosticsChannel: vscode.OutputChannel | undefined;
 let isWebviewReadyForTesting = false; // Flag for health tests
-const openPanelUpdateHandlers = new Set<
-  (trigger: DiffPanelUpdateTrigger) => void
->();
 
 const markdownExtensions = [
   ".md",
@@ -695,7 +692,6 @@ async function bindDiffPanel(
     }
   };
 
-  openPanelUpdateHandlers.add(scheduleUpdate);
 
   const update = async (trigger: DiffPanelUpdateTrigger) => {
     if (isDisposed) {
@@ -782,7 +778,6 @@ async function bindDiffPanel(
 
   panel.onDidDispose(() => {
     isDisposed = true;
-    openPanelUpdateHandlers.delete(scheduleUpdate);
     documentSubscription.dispose();
     configSubscription.dispose();
     repositorySubscription?.dispose();
@@ -1120,7 +1115,7 @@ export function activate(context: vscode.ExtensionContext) {
       );
 
       const resolver = createImageResolver(document.uri, panel.webview);
-      const { html: diffHtml, marpCss } = diffProvider.computeDiff(
+      const { html: diffHtml, marpCss, marpJs } = diffProvider.computeDiff(
         clipboardText,
         docText,
         resolver,
@@ -1169,6 +1164,7 @@ export function activate(context: vscode.ExtensionContext) {
         panel.webview.cspSource,
         getWebviewTranslations(),
         marpCss,
+        marpJs,
       );
 
       // Helper to track active panel for shortcuts

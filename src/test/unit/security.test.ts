@@ -174,4 +174,28 @@ describe("Security Tests", () => {
       "Mermaid should be initialized in strict security mode",
     );
   });
+
+  it("XSS in Frontmatter Values", () => {
+    const provider = new MarkdownDiffProvider();
+    const oldMarkdown = "---\ntitle: <script>alert('old')</script>\n---\nContent";
+    const newMarkdown = "---\ntitle: <script>alert('new')</script>\n---\nContent";
+
+    const { html: diffHtml } = provider.computeDiff(oldMarkdown, newMarkdown);
+
+    assert.strictEqual(
+      diffHtml.includes("<script>alert('old')</script>"),
+      false,
+      "Frontmatter old value should be escaped and not contain raw script tag",
+    );
+    assert.strictEqual(
+      diffHtml.includes("<script>alert('new')</script>"),
+      false,
+      "Frontmatter new value should be escaped and not contain raw script tag",
+    );
+    assert.ok(
+      diffHtml.includes("&lt;script&gt;alert(&#039;old&#039;)&lt;/script&gt;") ||
+      diffHtml.includes("&lt;script&gt;alert(&#039;new&#039;)&lt;/script&gt;"),
+      "Frontmatter values should be properly escaped",
+    );
+  });
 });

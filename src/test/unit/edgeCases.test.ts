@@ -6,6 +6,14 @@
 
 import * as assert from "assert";
 import { MarkdownDiffProvider } from "../../markdownDiff";
+import {
+  restoreBlockAttributes,
+  extractSharedReparentedLists,
+  normalizeListContainerChanges,
+  splitByBlocks,
+  splitConsolidatedDiffs,
+  lcsAlignment,
+} from "../../markdown/structuralDiff";
 
 describe("MarkdownDiffProvider - Edge Cases", () => {
   let provider: MarkdownDiffProvider;
@@ -63,5 +71,82 @@ describe("MarkdownDiffProvider - Edge Cases", () => {
     assert.ok(webviewContent.includes("ins pre") || webviewContent.includes("pre"), "CSS should handle pre inside ins");
     assert.ok(webviewContent.includes("hr"), "CSS should handle hr inside ins");
     assert.ok(webviewContent.includes("::after"), "CSS should have overlay for deleted pre blocks");
+  });
+
+  it("BUG-03: should correctly restore nested ins/del attributes using a tag stack", () => {
+    const token = "TK";
+    const oldPools = {
+      "TKxabcdef12": ['data-line="5"'],
+    };
+    const newPools = {
+      "TKxabcdef12": ['data-line="10"'],
+    };
+
+    // Nested: <ins> ... <del> TKxabcdef12="true" </del> ... </ins>
+    const input = '<ins>Some text <del>deleted token TKxabcdef12="true" details</del> inserted</ins>';
+    const output = restoreBlockAttributes(input, oldPools, newPools, token);
+
+    // Inside del, so we should restore old attribute (data-line="5")
+    assert.ok(output.includes('data-line="5"'), "Should restore the old attribute inside nested del");
+    assert.ok(!output.includes('data-line="10"'), "Should not restore the new attribute");
+  });
+
+  it("BUG-04: should stably extract shared reparented lists with duplicate structures", () => {
+    const deleted = '<del class="diff-block"><ul><li>item</li></ul></del>';
+    const inserted = '<ins><ul><li>parent</li></ul><ul><li>item</li></ul></ins>';
+    const input = `${deleted} ... ${inserted}`;
+
+    const output = extractSharedReparentedLists(input);
+    assert.ok(output.includes("parent"), "Should preserve list elements and complete successfully");
+  });
+
+  it("BUG-05: normalizeListContainerChanges should safeguard nested lists", () => {
+    const input = '<ol><li><ul><li>nested</li></ul></li></ol>';
+    const output = normalizeListContainerChanges(input);
+
+    assert.strictEqual(output, input, "Should not alter normal nested lists");
+  });
+
+  it("BUG-06: splitByBlocks should split large documents without headers safely at tag boundaries", () => {
+    const html = '<p>Paragraph 1</p><p>Paragraph 2</p><p>Paragraph 3</p>';
+    const sections = splitByBlocks(html);
+
+    assert.ok(sections.length >= 1, "Should split into at least one section");
+    sections.forEach(sec => {
+      assert.ok(sec.full.startsWith("<p>"), "Each chunk should start at a safe tag boundary");
+    });
+  });
+
+  it("BUG-11: lcsAlignment should correctly align sequences using optimized flat typed arrays", () => {
+    const oldSeq = ["A", "B", "C"];
+    const newSeq = ["A", "X", "C"];
+    const matches = lcsAlignment(oldSeq, newSeq, (a, b) => a === b);
+
+    assert.deepStrictEqual(matches, [
+      { oldIdx: 0, newIdx: 0 },
+      { oldIdx: 2, newIdx: 2 }
+    ], "Should align A and C correctly");
+  });
+
+  it("BUG-07: splitConsolidatedDiffs should reset blocksRegex.lastIndex and split properly", () => {
+    const input = '<del class="diff-block"><h2>A</h2><p>B</p></del><ins class="diff-block"><h2>X</h2><p>Y</p></ins>';
+    const output = splitConsolidatedDiffs(input);
+
+    assert.ok(output.includes("<h2>A</h2>"), "Should contain the block content");
+    assert.ok(output.includes("diff-block"), "Should contain diff classes");
+  });
+
+  it("BUG-08: should not double-wrap tables and should wrap del/ins table containers cleanly", () => {
+    const table = "<table><tr><td>Cell</td></tr></table>";
+
+    // 1. Wrapped table should remain unchanged
+    const wrappedInput = `<div class="table-scroll">${table}</div>`;
+    const wrappedOutput = provider.getWebviewContent(wrappedInput, "", "", "", "");
+    assert.ok(wrappedOutput.includes(wrappedInput), "Should not double-wrap already-wrapped table");
+    
+    // 2. Table inside del should wrap the del container, not the table inside it
+    const delInput = `<del class="diffdel diff-block">${table}</del>`;
+    const delOutput = provider.getWebviewContent(delInput, "", "", "", "");
+    assert.ok(delOutput.includes(`<div class="table-scroll"><del class="diffdel diff-block">${table}</del></div>`), "Should wrap outer del rather than nesting block-in-inline");
   });
 });

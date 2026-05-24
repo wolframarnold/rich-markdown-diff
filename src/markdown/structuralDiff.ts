@@ -244,39 +244,128 @@ export function lcsAlignment<T>(
 ): { oldIdx: number; newIdx: number }[] {
   const n = oldSeq.length;
   const m = newSeq.length;
+
   if (n === 0 || m === 0) {
     return [];
   }
 
-  const dp: number[][] = Array.from({ length: n + 1 }, () =>
-    new Array(m + 1).fill(0),
-  );
+  const stride = m + 1;
+  const dp = new Int32Array((n + 1) * stride);
 
   for (let i = 1; i <= n; i++) {
+    const rowOffset = i * stride;
+    const prevRowOffset = (i - 1) * stride;
     for (let j = 1; j <= m; j++) {
       if (isEqual(oldSeq[i - 1], newSeq[j - 1])) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
+        dp[rowOffset + j] = dp[prevRowOffset + j - 1] + 1;
       } else {
-        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        const val1 = dp[prevRowOffset + j];
+        const val2 = dp[rowOffset + j - 1];
+        dp[rowOffset + j] = val1 >= val2 ? val1 : val2;
       }
     }
   }
 
   const alignment: { oldIdx: number; newIdx: number }[] = [];
-  let i = n,
-    j = m;
+  let i = n;
+  let j = m;
+
   while (i > 0 && j > 0) {
     if (isEqual(oldSeq[i - 1], newSeq[j - 1])) {
-      alignment.unshift({ oldIdx: i - 1, newIdx: j - 1 });
+      alignment.push({ oldIdx: i - 1, newIdx: j - 1 });
       i--;
       j--;
-    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
-      i--;
     } else {
-      j--;
+      const val1 = dp[(i - 1) * stride + j];
+      const val2 = dp[i * stride + j - 1];
+      if (val1 >= val2) {
+        i--;
+      } else {
+        j--;
+      }
     }
   }
-  return alignment;
+
+  return alignment.reverse();
+}
+
+export function splitByBlocks(
+  html: string,
+): { header: string; headerText: string; content: string; full: string }[] {
+  const sections: {
+    header: string;
+    headerText: string;
+    content: string;
+    full: string;
+  }[] = [];
+
+  let i = 0;
+  let lastIndex = 0;
+  let nesting = 0;
+
+  const CHUNK_SIZE_TARGET = 5000;
+
+  while (i < html.length) {
+    if (html[i] === "<") {
+      if (html.substring(i, i + 4) === "<!--") {
+        const endComment = html.indexOf("-->", i + 4);
+        if (endComment !== -1) {
+          i = endComment + 3;
+          continue;
+        }
+      }
+
+      if (html[i + 1] === "/") {
+        nesting = Math.max(0, nesting - 1);
+        const endTag = html.indexOf(">", i);
+        if (endTag !== -1) {
+          i = endTag + 1;
+          continue;
+        }
+      } else if (html[i + 1] !== "!" && html[i + 1] !== "?") {
+        const match = html.substring(i).match(/^<([a-z0-9]+)\b/i);
+        if (match) {
+          const tagName = match[1].toLowerCase();
+          const isVoid = ["img", "br", "hr", "meta", "link", "input"].includes(tagName);
+          const endOfTag = html.indexOf(">", i);
+          const isSelfClosing = endOfTag !== -1 && html[endOfTag - 1] === "/";
+          if (!isVoid && !isSelfClosing) {
+            nesting++;
+          }
+          if (endOfTag !== -1) {
+            i = endOfTag + 1;
+            continue;
+          }
+        }
+      }
+    }
+
+    i++;
+
+    // Split at top-level block boundaries when we exceed target size
+    if (nesting === 0 && (i - lastIndex) >= CHUNK_SIZE_TARGET) {
+      const part = html.substring(lastIndex, i);
+      sections.push({
+        header: "",
+        headerText: "",
+        content: part,
+        full: part,
+      });
+      lastIndex = i;
+    }
+  }
+
+  if (lastIndex < html.length) {
+    const part = html.substring(lastIndex);
+    sections.push({
+      header: "",
+      headerText: "",
+      content: part,
+      full: part,
+    });
+  }
+
+  return sections;
 }
 
 /**
@@ -287,19 +376,27 @@ export function chunkedExecute(
   newHtml: string,
   execute: (old: string, newVal: string) => string,
 ): string {
-  const oldSections = splitBySections(oldHtml);
-  const newSections = splitBySections(newHtml);
+  let oldSections = splitBySections(oldHtml);
+  let newSections = splitBySections(newHtml);
 
-  // If no sections found (no headers), fall back to full diff
+  // If no sections found (no headers), fall back to splitting by block-level elements
+  let isBlockLevel = false;
   if (oldSections.length <= 1 && newSections.length <= 1) {
-    return execute(oldHtml, newHtml);
+    oldSections = splitByBlocks(oldHtml);
+    newSections = splitByBlocks(newHtml);
+    isBlockLevel = true;
   }
 
-  // Align by header text
+  // Align by header text, or by exact block content if they are block chunks
   const matches = lcsAlignment(
     oldSections,
     newSections,
-    (a, b) => a.headerText !== "" && a.headerText === b.headerText,
+    (a, b) => {
+      if (isBlockLevel) {
+        return a.full === b.full;
+      }
+      return a.headerText !== "" && a.headerText === b.headerText;
+    },
   );
 
   let result = "";
@@ -554,7 +651,9 @@ export function splitConsolidatedDiffs(html: string): string {
       }
       blocksRegex.lastIndex = 0;
 
+      blocksRegex.lastIndex = 0;
       const delRemaining = delContent.replace(blocksRegex, "").trim();
+      blocksRegex.lastIndex = 0;
       const insRemaining = insContent.replace(blocksRegex, "").trim();
 
       if (
@@ -590,6 +689,7 @@ export function splitConsolidatedDiffs(html: string): string {
         parts.push(m[0]);
       }
 
+      blocksRegex.lastIndex = 0;
       const remainingText = content.replace(blocksRegex, "").trim();
 
       if (parts.length > 1 && remainingText.length === 0) {
@@ -643,7 +743,7 @@ export function maskBlockAttributes(
 } {
   const attributePools: Record<string, string[]> = {};
   const blockTags =
-    "h[1-6]|p|blockquote|pre|div|table|ul|ol|dl|section|li|tr|th|td";
+    "h[1-6]|p|blockquote|pre|div|table|ul|ol|dl|section|li|tr|th|td|img";
 
   // Exclude already masked tags
   const regex = new RegExp(
@@ -678,7 +778,7 @@ export function maskBlockAttributes(
     if (!attributePools[key]) {
       attributePools[key] = [];
     }
-    attributePools[key].push(attrs);
+    attributePools[key].push(attrs.replace(/^\s+/, ""));
 
     return `${tag} ${key}="true"${close}`;
   });
@@ -709,8 +809,7 @@ export function restoreBlockAttributes(
     "gi",
   );
 
-  let inIns = false;
-  let inDel = false;
+  const tagStack: ("ins" | "del")[] = [];
 
   return diffHtml.replace(
     combinedRegex,
@@ -718,9 +817,9 @@ export function restoreBlockAttributes(
       if (openTag) {
         const lower = openTag.toLowerCase();
         if (lower.startsWith("<ins")) {
-          inIns = true;
+          tagStack.push("ins");
         } else if (lower.startsWith("<del")) {
-          inDel = true;
+          tagStack.push("del");
         }
         return match;
       }
@@ -728,9 +827,15 @@ export function restoreBlockAttributes(
       if (closeTag) {
         const lower = closeTag.toLowerCase();
         if (lower.startsWith("</ins")) {
-          inIns = false;
+          const idx = tagStack.lastIndexOf("ins");
+          if (idx !== -1) {
+            tagStack.splice(idx, 1);
+          }
         } else if (lower.startsWith("</del")) {
-          inDel = false;
+          const idx = tagStack.lastIndexOf("del");
+          if (idx !== -1) {
+            tagStack.splice(idx, 1);
+          }
         }
         return match;
       }
@@ -738,6 +843,8 @@ export function restoreBlockAttributes(
       if (tokenMatch) {
         const key = `${token}x${hash}`;
         let res;
+        const inDel = tagStack.includes("del");
+        const inIns = tagStack.includes("ins");
         if (inDel) {
           const idx = oldCounters[key] || 0;
           const pool = oldPools[key] || [];
@@ -972,13 +1079,9 @@ export function createToken(
   prefix: string,
   tokens: Record<string, string>,
 ): string {
-  // For LINEBLOCK tokens, we want to include the data-line attribute in the hash
-  // so that content on different lines is treated as distinct by htmldiff.
-  // For other blocks (MATH, etc.), we strip them to allow granular diffing.
-  const hashContent =
-    prefix === "LINEBLOCK"
-      ? content
-      : content.replace(/\s?data-line(?:-end)?="[^"]*"/g, "");
+  // Strip volatile data-line attributes from the hash content so that blocks
+  // with identical content but different line numbers produce the same token.
+  const hashContent = content.replace(/\s?data-line(?:-end)?="[^"]*"/g, "");
 
   const hash = crypto
     .createHash("sha256")
@@ -1795,16 +1898,19 @@ export function extractSharedReparentedLists(html: string): string {
     sourceHtml: string,
     beforeIndex: number,
     normalizedSharedList: string,
-  ): string | null => {
+  ): { wrapper: string; index: number } | null => {
     const prefix = sourceHtml.slice(0, beforeIndex);
     const deletedNestedListRegex =
       /(?:<del[^>]*>\s*<\/del>\s*)?<del[^>]*class="[^"]*diff-block[^"]*"[^>]*>\s*(<(ul|ol|dl)[^>]*>[\s\S]*?<\/\2>)\s*<\/del>(?:\s*<del[^>]*>\s*<\/del>\s*)*/gi;
     let deletedMatch: RegExpExecArray | null;
-    let matchedDeletedWrapper: string | null = null;
+    let matchedDeletedWrapper: { wrapper: string; index: number } | null = null;
     while ((deletedMatch = deletedNestedListRegex.exec(prefix)) !== null) {
       const deletedList = deletedMatch[1];
       if (normalizeListFragment(deletedList) === normalizedSharedList) {
-        matchedDeletedWrapper = deletedMatch[0];
+        matchedDeletedWrapper = {
+          wrapper: deletedMatch[0],
+          index: deletedMatch.index,
+        };
       }
     }
     return matchedDeletedWrapper;
@@ -1814,57 +1920,94 @@ export function extractSharedReparentedLists(html: string): string {
     /<ins([^>]*)>\s*(<(ol|ul|dl)[^>]*>\s*<li[\s\S]*?<\/li>\s*<\/\3>)\s*(<(ul|ol|dl)[^>]*>[\s\S]*?<\/\5>)\s*<\/ins>(?:\s*<ins[^>]*>\s*<\/ins>\s*)*/gi;
 
   let result = html;
+  const matches: {
+    index: number;
+    fullMatch: string;
+    insertedAttrs: string;
+    newParentList: string;
+    sharedList: string;
+  }[] = [];
   let compositeMatch: RegExpExecArray | null;
-  while ((compositeMatch = insertedCompositeRegex.exec(html)) !== null) {
-    const fullInsertedBlock = compositeMatch[0];
-    const insertedAttrs = compositeMatch[1];
-    const newParentList = compositeMatch[2];
-    const sharedList = compositeMatch[4];
+  insertedCompositeRegex.lastIndex = 0;
+  while ((compositeMatch = insertedCompositeRegex.exec(result)) !== null) {
+    matches.push({
+      index: compositeMatch.index,
+      fullMatch: compositeMatch[0],
+      insertedAttrs: compositeMatch[1],
+      newParentList: compositeMatch[2],
+      sharedList: compositeMatch[4],
+    });
+  }
+
+  // Iterate backwards so indices to the left remain stable
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const { index, fullMatch, insertedAttrs, newParentList, sharedList } = matches[i];
     const normalizedSharedList = normalizeListFragment(sharedList);
-    const insertedBlockIndex = result.indexOf(fullInsertedBlock);
-    if (insertedBlockIndex === -1) {
-      continue;
-    }
-    const matchedDeletedWrapper = findMatchingDeletedNestedListWrapper(
+    
+    // Search for deleted wrapper in result BEFORE index
+    const matchedDeleted = findMatchingDeletedNestedListWrapper(
       result,
-      insertedBlockIndex,
+      index,
       normalizedSharedList,
     );
-    if (!matchedDeletedWrapper) {
+    if (!matchedDeleted) {
       continue;
     }
-    result = result.replace(matchedDeletedWrapper, "");
-    result = result.replace(
-      fullInsertedBlock,
-      `<ins${insertedAttrs}>${newParentList}</ins>\n${sharedList}`,
+    
+    // Replace both matchedDeletedWrapper and the fullMatch in result using precise slices
+    // Since matchedDeleted.index < index, we can safely slice
+    const beforeDeleted = result.slice(0, matchedDeleted.index);
+    const betweenDeletedAndMatch = result.slice(
+      matchedDeleted.index + matchedDeleted.wrapper.length,
+      index,
     );
+    const afterMatch = result.slice(index + fullMatch.length);
+    
+    const replacement = `<ins${insertedAttrs}>${newParentList}</ins>\n${sharedList}`;
+    result = beforeDeleted + betweenDeletedAndMatch + replacement + afterMatch;
   }
 
   const insertedListOnlyRegex =
     /<ins([^>]*)>\s*(<(ul|ol|dl)[^>]*>[\s\S]*?<\/\3>)\s*<\/ins>/gi;
 
+  const matches2: {
+    index: number;
+    fullMatch: string;
+    sharedList: string;
+  }[] = [];
   let insertedListOnlyMatch: RegExpExecArray | null;
-  while (
-    (insertedListOnlyMatch = insertedListOnlyRegex.exec(result)) !== null
-  ) {
-    const fullInsertedBlock = insertedListOnlyMatch[0];
-    const sharedList = insertedListOnlyMatch[2];
+  insertedListOnlyRegex.lastIndex = 0;
+  while ((insertedListOnlyMatch = insertedListOnlyRegex.exec(result)) !== null) {
+    matches2.push({
+      index: insertedListOnlyMatch.index,
+      fullMatch: insertedListOnlyMatch[0],
+      sharedList: insertedListOnlyMatch[2],
+    });
+  }
+
+  for (let i = matches2.length - 1; i >= 0; i--) {
+    const { index, fullMatch, sharedList } = matches2[i];
     const normalizedSharedList = normalizeListFragment(sharedList);
-    const insertedBlockIndex = result.indexOf(fullInsertedBlock);
-    if (insertedBlockIndex === -1) {
-      continue;
-    }
-    const matchedDeletedWrapper = findMatchingDeletedNestedListWrapper(
+    
+    const matchedDeleted = findMatchingDeletedNestedListWrapper(
       result,
-      insertedBlockIndex,
+      index,
       normalizedSharedList,
     );
-    if (!matchedDeletedWrapper) {
+    if (!matchedDeleted) {
       continue;
     }
-    result = result.replace(matchedDeletedWrapper, "");
-    result = result.replace(fullInsertedBlock, sharedList);
+    
+    const beforeDeleted = result.slice(0, matchedDeleted.index);
+    const betweenDeletedAndMatch = result.slice(
+      matchedDeleted.index + matchedDeleted.wrapper.length,
+      index,
+    );
+    const afterMatch = result.slice(index + fullMatch.length);
+    
+    result = beforeDeleted + betweenDeletedAndMatch + sharedList + afterMatch;
   }
+
   return result;
 }
 
@@ -1951,6 +2094,11 @@ export function normalizeListContainerChanges(html: string): string {
     /<(ol|ul|dl)([^>]*)>\s*<(ol|ul|dl)([^>]*)>([\s\S]*?)<\/\1>\s*<\/\3>/gi,
     (match, oldTag, oldAttrs, newTag, newAttrs, listBody) => {
       if (String(oldTag).toLowerCase() === String(newTag).toLowerCase()) {
+        return match;
+      }
+      // Safety validation check: Ensure the listBody does not contain any other list container tags
+      // to avoid matching across unrelated lists or nested list boundaries.
+      if (/<(ol|ul|dl)\b/i.test(listBody) || /<\/(ol|ul|dl)>/i.test(listBody)) {
         return match;
       }
       return createStructuralListContainerDiff(
