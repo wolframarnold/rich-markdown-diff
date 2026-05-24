@@ -2,7 +2,7 @@
 
 All notable changes to **Rich Markdown Diff** will be documented in this file.
 
-## [1.3.1] - 2026-MM-DD
+## [1.3.1] - 2026-05-24
 
 ### Improved in 1.3.1
 

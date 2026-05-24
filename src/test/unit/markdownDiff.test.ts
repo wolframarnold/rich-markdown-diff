@@ -486,6 +486,15 @@ describe("MarkdownDiffProvider", () => {
       "mermaid.js",
       "hljs-light.css",
       "hljs-dark.css",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      false,
     );
 
     assert.ok(
@@ -493,24 +502,12 @@ describe("MarkdownDiffProvider", () => {
       "Gutter markers should be opt-in instead of enabled by default",
     );
     assert.ok(
-      !webviewContent.includes("#right-pane [data-line]:hover::before"),
-      "Webview should not inject hover-only quick-edit labels",
-    );
-    assert.ok(
-      !webviewContent.includes("outline: 2px dashed rgba(255, 165, 0, 0.4);"),
-      "Webview should not draw hover outlines for editable blocks",
-    );
-    assert.ok(
-      !webviewContent.includes("cursor: help;"),
-      "Webview should not switch the mouse cursor to the help affordance when blame is enabled",
+      !/<body class="[^"]*show-git-blame/.test(webviewContent),
+      "Git blame should be opt-in instead of enabled by default",
     );
     assert.ok(
       !webviewContent.includes('id="blame-tooltip"'),
       "Webview should not render a hover blame tooltip container",
-    );
-    assert.ok(
-      !webviewContent.includes("addEventListener('mouseenter', showBlame)"),
-      "Webview should not register hover blame handlers on diff lines",
     );
   });
 

@@ -77,6 +77,80 @@ export function getWebviewContent(
   const safeRight = escapeHtml(
     rightLabel === "Modified" ? t("Modified") : rightLabel,
   );
+  const blameScript = `
+        // --- Blame Tooltip Logic ---
+        const tooltip = document.getElementById('blame-tooltip');
+        let tooltipTimeout;
+        let hoverTimeout;
+
+        const showBlame = (e) => {
+            if (e.target.closest('.image-diff-controls') || e.target.closest('.toolbar') || e.target.closest('.breadcrumbs-bar') || e.target.closest('.block-editor-overlay')) {
+                return;
+            }
+
+            const el = e.currentTarget;
+            const line = el.getAttribute('data-line');
+            if (line === null) return;
+
+            clearTimeout(hoverTimeout);
+            hoverTimeout = setTimeout(() => {
+                el.classList.add('hover-focused');
+                const alert = el.closest('.markdown-alert');
+                if (alert) alert.classList.add('hover-focused');
+
+                if (!document.body.classList.contains('show-git-blame')) {
+                    return;
+                }
+
+                const pane = el.closest('#left-pane') ? 'original' : 'modified';
+                const info = blameInfo[pane]?.lines?.[parseInt(line, 10) + 1]; // porcelain is 1-indexed
+
+                if (info) {
+                    clearTimeout(tooltipTimeout);
+                    const date = new Date(info.authorTime * 1000).toLocaleDateString();
+                    tooltip.innerHTML = \`<span class="blame-author">\${info.author}</span><span class="blame-date">\${date}</span><span class="blame-msg">\${info.summary}</span>\`;
+                    tooltip.style.display = 'block';
+                    
+                    const x = Math.min(window.innerWidth - 300, e.clientX + 15);
+                    const y = e.clientY + 15;
+                    tooltip.style.left = x + 'px';
+                    tooltip.style.top = y + 'px';
+                    
+                    requestAnimationFrame(() => tooltip.style.opacity = '1');
+                }
+            }, lineHoverDelay);
+        };
+
+        const hideBlame = (e) => {
+            clearTimeout(hoverTimeout);
+            const el = e.currentTarget;
+            el.classList.remove('hover-focused');
+            const alert = el.closest('.markdown-alert');
+            if (alert) alert.classList.remove('hover-focused');
+
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+                tooltipTimeout = setTimeout(() => {
+                    tooltip.style.display = 'none';
+                }, 150);
+            }
+        };
+
+        const attachBlameEvents = () => {
+             document.querySelectorAll('[data-line]').forEach(el => {
+                 el.removeEventListener('mouseenter', showBlame);
+                 el.addEventListener('mouseenter', showBlame);
+                 el.removeEventListener('mouseleave', hideBlame);
+                 el.addEventListener('mouseleave', hideBlame);
+             });
+        };
+
+        const originalCollectChanges = collectChanges;
+        collectChanges = () => {
+            originalCollectChanges();
+            attachBlameEvents();
+        };
+    `;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -1672,6 +1746,85 @@ export function getWebviewContent(
             0% { background-color: var(--vscode-editor-hoverHighlightBackground, rgba(127, 127, 127, 0.3)); }
             100% { background-color: transparent; }
         }
+
+        .blame-tooltip {
+            position: absolute;
+            z-index: 10000;
+            background-color: var(--vscode-editorWidget-background);
+            color: var(--vscode-editorWidget-foreground);
+            border: 1px solid var(--vscode-editorWidget-border);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            max-width: 280px;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        .blame-tooltip .blame-author { font-weight: 600; color: var(--vscode-textLink-foreground); }
+        .blame-tooltip .blame-date { opacity: 0.7; margin-left: 8px; }
+        .blame-tooltip .blame-msg { margin-top: 4px; display: block; border-top: 1px solid rgba(127, 127, 127, 0.2); padding-top: 4px; }
+
+        body.show-git-blame [data-line] {
+            transition: background-color 0.1s ease;
+        }
+        body.show-git-blame [data-line].hover-focused {
+            background-color: var(--vscode-editor-hoverHighlightBackground, rgba(127, 127, 127, 0.1));
+        }
+        body.show-git-blame #left-pane [data-line].hover-focused {
+            cursor: help;
+        }
+
+        #right-pane [data-line].hover-focused {
+            outline: 2px dashed rgba(255, 165, 0, 0.4);
+            outline-offset: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #right-pane [data-line].hover-focused::before {
+            content: "✎ Line " attr(data-line);
+            position: absolute;
+            top: -18px;
+            right: 0;
+            background-color: rgba(255, 165, 0, 0.8);
+            color: white;
+            font-size: 10px;
+            padding: 0 4px;
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Exclude deleted/non-editable lines */
+        #right-pane :is(del, del [data-line]).hover-focused {
+            outline: none !important;
+            cursor: default !important;
+        }
+        #right-pane :is(del, del [data-line]).hover-focused::before {
+            display: none !important;
+        }
+
+        /* Table-specific Fix: structural tags should not be position:relative 
+           as it disrupts table layout in some browsers. Also avoid pseudo-elements 
+           on tr/table as they are treated as children and break column alignment. */
+        #right-pane :is(table, thead, tbody, tr)[data-line].hover-focused {
+            position: static !important;
+        }
+        #right-pane :is(table, thead, tbody, tr)[data-line].hover-focused::before {
+            display: none !important;
+        }
+
+        /* Group GitHub Alerts as a single unit for Quick Edit */
+        .markdown-alert.hover-focused [data-line] {
+            outline: none !important;
+        }
+        .markdown-alert.hover-focused [data-line]::before {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="VRT_LAYOUT_CLASS ${marpCss ? "marp-mode" : ""} ${showGutterMarkers ? "show-gutter-markers" : ""} ${showGitBlame ? "show-git-blame" : ""}">
@@ -1699,6 +1852,7 @@ export function getWebviewContent(
     </div>
     <div class="overview-ruler" id="left-overview-ruler"></div>
     <div class="overview-ruler" id="right-overview-ruler"></div>
+    ${showGitBlame ? '<div id="blame-tooltip" class="blame-tooltip"></div>' : ''}
     <script nonce="${nonce}">
         const vscode = acquireVsCodeApi();
         window.vscode = vscode;
@@ -2618,6 +2772,8 @@ export function getWebviewContent(
         leftRuler.addEventListener('click', (e) => handleRulerClick(e, leftPane));
         rightRuler.addEventListener('click', (e) => handleRulerClick(e, rightPane));
 
+        ${blameScript}
+
         // --- Layout Stability ---
         let resizeTimeout;
         let layoutRefreshTimeout;
@@ -3192,6 +3348,12 @@ export function getWebviewContent(
 
         // Single Click for Quick Edit (Modified Pane only)
         document.body.addEventListener('click', (e) => {
+            // If there's active text selection, assume the user is trying to copy/select text and do not trigger click actions
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                return;
+            }
+
             // Obsidian Tag Click
             const tagEl = e.target.closest('.obsidian-tag');
             if (tagEl) {

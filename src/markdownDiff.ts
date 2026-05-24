@@ -49,9 +49,26 @@ function wrapTablesForScrolling(html: string): string {
     return html;
   }
 
+  // Matches a table, optionally wrapped in a single <ins> or <del> tag
+  const tableRegex = /(?:<(ins|del)\b([^>]*)>\s*)?<table\b[\s\S]*?<\/table>(?:\s*<\/(?:ins|del)>)?/gi;
+
   return html.replace(
-    /<table\b[\s\S]*?<\/table>/gi,
-    (tableHtml) => `<div class="table-scroll">${tableHtml}</div>`,
+    tableRegex,
+    (match, tagType, tagAttrs, offset, fullString) => {
+      // Check if this match is already wrapped in a div.table-scroll
+      const preceding = fullString.slice(0, offset).trim();
+      const following = fullString.slice(offset + match.length).trim();
+
+      const isPrecededByScrollDiv = preceding.endsWith('<div class="table-scroll">') || 
+                                     preceding.endsWith("<div class=\"table-scroll\">");
+      const isFollowedByCloseDiv = following.startsWith("</div>");
+
+      if (isPrecededByScrollDiv && isFollowedByCloseDiv) {
+        return match;
+      }
+
+      return `<div class="table-scroll">${match}</div>`;
+    }
   );
 }
 
@@ -313,14 +330,14 @@ export class MarkdownDiffProvider {
       if (isChanged) {
         fmDiffRows += `<tr>
                 <td>${escapeHtml(key)}</td>
-                <td class="fm-old fm-changed">${safeOldKey}</td>
-                <td class="fm-new fm-changed">${safeNewKey}</td>
+                <td class="fm-old fm-changed">${escapeHtml(safeOldKey)}</td>
+                <td class="fm-new fm-changed">${escapeHtml(safeNewKey)}</td>
             </tr>`;
       } else {
         fmDiffRows += `<tr>
                 <td>${escapeHtml(key)}</td>
-                <td class="fm-old">${safeOldKey}</td>
-                <td class="fm-new">${safeNewKey}</td>
+                <td class="fm-old">${escapeHtml(safeOldKey)}</td>
+                <td class="fm-new">${escapeHtml(safeNewKey)}</td>
             </tr>`;
       }
     });
