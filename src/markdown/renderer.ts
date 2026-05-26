@@ -195,24 +195,26 @@ export function injectLineNumbers(md: MarkdownIt) {
         }
       }
 
-      const hasMap = startLine !== undefined && endLine !== undefined;
-      if (hasMap && env) {
-        env.currentLine = startLine;
+      const offset = env && typeof env.lineOffset === "number" ? env.lineOffset : 0;
+      const adjustedStart = startLine !== undefined ? startLine + offset : undefined;
+      const adjustedEnd = endLine !== undefined ? endLine + offset : undefined;
+
+      if (adjustedStart !== undefined && env) {
+        env.currentLine = adjustedStart;
       }
 
-      if (hasMap) {
-
-        token.attrSet("data-line", String(startLine));
-        token.attrSet("data-line-end", String(endLine));
+      if (adjustedStart !== undefined) {
+        token.attrSet("data-line", String(adjustedStart));
+        token.attrSet("data-line-end", String(adjustedEnd));
       }
       let html = original.call(self, tokens, idx, options, env, self);
 
       // If the original renderer didn't include the data attributes (common with plugins),
       // try to inject them into the first tag of the output.
-      if (hasMap && html && !/data-line="/i.test(html)) {
+      if (adjustedStart !== undefined && html && !/data-line="/i.test(html)) {
         html = html.replace(
           /(\/?>)/,
-          ` data-line="${startLine}" data-line-end="${endLine}"$1`,
+          ` data-line="${adjustedStart}" data-line-end="${adjustedEnd}"$1`,
         );
       }
       return html;

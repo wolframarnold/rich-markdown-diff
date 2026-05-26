@@ -2,6 +2,12 @@
 
 All notable changes to **Rich Markdown Diff** will be documented in this file.
 
+## [NEXT RELEASE]
+
+### Fixed in NEXT RELEASE
+
+- **Quick Edit**: Fixed a bug where the Quick Edit overlay loaded incorrect source text when editing documents that contain frontmatter metadata.
+
 ## [1.3.1] - 2026-05-24
 
 ### Improved in 1.3.1

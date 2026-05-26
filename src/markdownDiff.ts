@@ -72,6 +72,18 @@ function wrapTablesForScrolling(html: string): string {
   );
 }
 
+function getLineOffset(original: string, content: string): number {
+  if (!original || !content) {
+    return 0;
+  }
+  const index = original.indexOf(content);
+  if (index === -1) {
+    return 0;
+  }
+  const prefix = original.slice(0, index);
+  return prefix.split(/\r?\n/).length - 1;
+}
+
 /**
  * Provides functionality to compute and render differences between Markdown documents.
  * It uses `markdown-it` for rendering and `htmldiff-js` for computing HTML-level differences.
@@ -124,16 +136,24 @@ export class MarkdownDiffProvider {
 
     const isMarp = !!(oldMatter.data.marp || newMatter.data.marp);
 
+    const oldLineOffset = isMarp ? 0 : getLineOffset(oldMarkdown, oldMatter.content);
+    const newLineOffset = isMarp ? 0 : getLineOffset(newMarkdown, newMatter.content);
+
     // 1. Render Body Diff
     const envOld = {
       imageResolver: oldImageResolver ?? imageResolver,
       docId: "old",
+      lineOffset: oldLineOffset,
     };
     let marpCss: string | undefined;
     let marpJs: string | undefined;
 
     let bodyDiffHtml: string;
-    const envNew = { imageResolver, docId: "new" };
+    const envNew = {
+      imageResolver,
+      docId: "new",
+      lineOffset: newLineOffset,
+    };
     if (isMarp && this.marp) {
       const { html: oHtml, css: cssOld } = this.marp.render(
         oldMarkdown,
