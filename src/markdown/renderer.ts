@@ -33,6 +33,7 @@ const obsidian = require("./obsidianPlugin");
 const katex = require("@iktakahiro/markdown-it-katex");
 // @ts-ignore
 const taskLists = require("markdown-it-task-lists");
+import mdxPlugin from "./mdxPlugin";
 
 /**
  * Creates and configures a new MarkdownIt instance with all required plugins and rules.
@@ -64,6 +65,9 @@ export function createMarkdownRenderer(): MarkdownIt {
 
   // Task Lists: Checkboxes
   md.use(taskLists, { enabled: false });
+
+  // MDX & Docusaurus Components
+  md.use(mdxPlugin);
 
   // Custom Rules
   configureRules(md);
@@ -143,6 +147,9 @@ export function injectLineNumbers(md: MarkdownIt) {
     "dd_open",
     "alert_open",
     "github_alert_open",
+    "mdx_open",
+    "mdx_self_closing",
+    "admonition_open",
   ];
 
   rules.forEach((rule) => {

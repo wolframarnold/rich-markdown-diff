@@ -1825,6 +1825,299 @@ export function getWebviewContent(
         .markdown-alert.hover-focused [data-line]::before {
             display: none !important;
         }
+
+        /* --- MDX & Docusaurus / Astro Component Styles --- */
+        .mdx-tabs-container {
+            margin: 16px 0;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: var(--markdown-raised-background);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .mdx-tab-bar {
+            display: flex;
+            background-color: var(--markdown-surface-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+            padding: 2px 6px 0 6px;
+            gap: 4px;
+        }
+        .mdx-tab-button {
+            padding: 6px 12px;
+            border: none;
+            background: none;
+            color: var(--vscode-descriptionForeground);
+            cursor: pointer;
+            font-size: 13px;
+            font-family: var(--vscode-font-family);
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .mdx-tab-button:hover {
+            color: var(--markdown-foreground);
+        }
+        .mdx-tab-button.active {
+            color: var(--vscode-button-background);
+            border-bottom-color: var(--vscode-button-background);
+            font-weight: bold;
+        }
+        .mdx-tab-content {
+            padding: 16px;
+            display: none;
+        }
+        .mdx-tab-content.active {
+            display: block !important;
+        }
+
+        /* Badge Styles */
+        .mdx-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: var(--vscode-font-family);
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        .mdx-badge-default {
+            background-color: var(--vscode-badge-background, #4f4f4f);
+            color: var(--vscode-badge-foreground, #fff);
+        }
+        .mdx-badge-note {
+            background-color: rgba(0, 122, 255, 0.15);
+            color: #007aff;
+            border: 1px solid rgba(0, 122, 255, 0.3);
+        }
+        .mdx-badge-success {
+            background-color: rgba(48, 209, 88, 0.15);
+            color: #30d158;
+            border: 1px solid rgba(48, 209, 88, 0.3);
+        }
+        .mdx-badge-caution {
+            background-color: rgba(255, 214, 10, 0.15);
+            color: #ffd60a;
+            border: 1px solid rgba(255, 214, 10, 0.3);
+        }
+        .mdx-badge-danger {
+            background-color: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+
+        /* Steps (Timeline) Styles */
+        .mdx-steps {
+            margin: 24px 0;
+            padding-left: 20px;
+        }
+        .mdx-steps ol {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+        .mdx-steps ol > li {
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 24px;
+            min-height: 28px;
+        }
+        .mdx-steps ol > li::before {
+            content: "";
+            position: absolute;
+            left: 13px;
+            top: 26px;
+            bottom: -30px;
+            width: 2px;
+            background-color: var(--vscode-panel-border);
+        }
+        .mdx-steps ol > li:last-child::before {
+            display: none;
+        }
+        .mdx-steps ol > li::after {
+            content: counter(list-item);
+            counter-increment: list-item;
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background-color: var(--markdown-surface-background);
+            border: 2px solid var(--vscode-button-background);
+            color: var(--vscode-button-background);
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        /* Card Styles */
+        .mdx-card {
+            margin: 16px 0;
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: var(--markdown-raised-background);
+            display: flex;
+            flex-direction: column;
+        }
+        .mdx-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background-color: var(--markdown-surface-background);
+            border-bottom: 1px solid var(--vscode-panel-border);
+        }
+        .mdx-card-title {
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .mdx-card-body {
+            padding: 16px;
+        }
+
+        /* Codicon Font Simulators */
+        .mdx-codicon {
+            font-size: 16px;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .mdx-icon-document::before { content: "📄"; }
+        .mdx-icon-info::before { content: "ℹ️"; }
+        .mdx-icon-warning::before { content: "⚠️"; }
+        .mdx-icon-danger::before { content: "🚨"; }
+        .mdx-icon-tip::before { content: "💡"; }
+        .mdx-icon-gear::before, .mdx-icon-tools::before { content: "⚙️"; }
+        .mdx-icon-note::before { content: "📝"; }
+        .mdx-icon-link::before { content: "🔗"; }
+        .mdx-icon-star::before { content: "🌟"; }
+        .mdx-icon-code::before { content: "💻"; }
+
+        /* Docusaurus Admonitions */
+        .mdx-admonition {
+            margin: 16px 0;
+            border-left: 4px solid #007aff;
+            border-radius: 0 6px 6px 0;
+            background-color: rgba(0, 122, 255, 0.05);
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        .mdx-admonition-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #007aff;
+        }
+        .mdx-admonition-icon {
+            font-size: 16px;
+        }
+        .mdx-admonition-title {
+            font-size: 14px;
+        }
+        .mdx-admonition-body {
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+        .mdx-admonition-note {
+            border-left-color: #007aff;
+            background-color: rgba(0, 122, 255, 0.05);
+        }
+        .mdx-admonition-note .mdx-admonition-header {
+            color: #007aff;
+        }
+        .mdx-admonition-tip {
+            border-left-color: #30d158;
+            background-color: rgba(48, 209, 88, 0.05);
+        }
+        .mdx-admonition-tip .mdx-admonition-header {
+            color: #30d158;
+        }
+        .mdx-admonition-info {
+            border-left-color: #0a84ff;
+            background-color: rgba(10, 132, 255, 0.05);
+        }
+        .mdx-admonition-info .mdx-admonition-header {
+            color: #0a84ff;
+        }
+        .mdx-admonition-warning {
+            border-left-color: #ffd60a;
+            background-color: rgba(255, 214, 10, 0.05);
+        }
+        .mdx-admonition-warning .mdx-admonition-header {
+            color: #ffd60a;
+        }
+        .mdx-admonition-danger {
+            border-left-color: #ff453a;
+            background-color: rgba(255, 69, 58, 0.05);
+        }
+        .mdx-admonition-danger .mdx-admonition-header {
+            color: #ff453a;
+        }
+
+        /* Fallback Components (Placeholders) */
+        .mdx-fallback-card {
+            margin: 16px 0;
+            border: 1px dashed var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 14px 16px;
+            background-color: rgba(255, 255, 255, 0.02);
+            transition: border-color 0.2s;
+        }
+        .mdx-fallback-card:hover {
+            border-color: var(--vscode-descriptionForeground);
+        }
+        .mdx-fallback-card.mdx-self-closing {
+            border-style: dotted;
+        }
+        .mdx-fallback-header {
+            margin-bottom: 8px;
+        }
+        .mdx-fallback-badge {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--vscode-descriptionForeground);
+            background-color: var(--markdown-surface-background);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--vscode-panel-border);
+        }
+        .mdx-fallback-props {
+            font-size: 12px;
+            font-family: monospace;
+            margin: 8px 0;
+            padding-left: 20px;
+            color: var(--vscode-descriptionForeground);
+            list-style-type: square;
+        }
+        .mdx-fallback-no-props {
+            font-size: 12px;
+            color: var(--vscode-descriptionForeground);
+            font-style: italic;
+            margin: 4px 0;
+        }
+        .mdx-fallback-content {
+            border-top: 1px solid var(--vscode-panel-border);
+            margin-top: 8px;
+            padding-top: 8px;
+        }
+        .mdx-inline-fallback {
+            font-family: monospace;
+            font-size: 12px;
+            background-color: var(--markdown-raised-background);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid var(--vscode-panel-border);
+            color: var(--vscode-descriptionForeground);
+            margin: 0 2px;
+        }
     </style>
 </head>
 <body class="VRT_LAYOUT_CLASS ${marpCss ? "marp-mode" : ""} ${showGutterMarkers ? "show-gutter-markers" : ""} ${showGitBlame ? "show-git-blame" : ""}">
@@ -2950,8 +3243,52 @@ export function getWebviewContent(
           subtree: true,
         });
 
+        function initMdxTabs() {
+            const containers = document.querySelectorAll('.mdx-tabs-container');
+            containers.forEach((container) => {
+                if (container.querySelector('.mdx-tab-bar')) return;
+                
+                const contents = Array.from(container.querySelectorAll(':scope > .mdx-tab-content'));
+                if (contents.length === 0) return;
+                
+                const tabBar = document.createElement('div');
+                tabBar.className = 'mdx-tab-bar';
+                
+                contents.forEach((content, contentIdx) => {
+                    const label = content.getAttribute('data-label') || 'Tab';
+                    const val = content.getAttribute('data-value') || String(contentIdx);
+                    const isDefault = content.getAttribute('data-default') === 'true';
+                    
+                    const button = document.createElement('button');
+                    button.className = 'mdx-tab-button';
+                    button.textContent = label;
+                    button.setAttribute('data-value', val);
+                    
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        tabBar.querySelectorAll('.mdx-tab-button').forEach(btn => btn.classList.remove('active'));
+                        contents.forEach(c => c.classList.remove('active'));
+                        
+                        button.classList.add('active');
+                        content.classList.add('active');
+                    };
+                    
+                    tabBar.appendChild(button);
+                    
+                    const shouldActivate = isDefault || (contentIdx === 0 && !contents.some(c => c.getAttribute('data-default') === 'true'));
+                    if (shouldActivate) {
+                        button.classList.add('active');
+                        content.classList.add('active');
+                    }
+                });
+                
+                container.insertBefore(tabBar, container.firstChild);
+            });
+        }
+
         window.addEventListener('load', () => {
           noteRuntimeEvent('window-load');
+          initMdxTabs();
           scheduleAsyncLayoutRefresh();
         });
         window.setTimeout(() => {

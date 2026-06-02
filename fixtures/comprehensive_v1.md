@@ -140,6 +140,45 @@ SOFTWARE.
 
 ![Icon V1](img_v1.svg)
 
+## MDX and Custom Components
+
+<Tabs>
+  <TabItem value="npm" label="NPM" default>
+    - Install package:
+      ```bash
+      npm install my-package
+      ```
+  </TabItem>
+  <TabItem value="yarn" label="Yarn">
+    - Install package:
+      ```bash
+      yarn add my-package
+      ```
+  </TabItem>
+</Tabs>
+
+Let's test inline badges: <Badge text="Caution" variant="caution" /> and <Badge text="Deprecated" variant="danger" />.
+
+And here is a Starlight steps component:
+<Steps>
+1. Download the tool
+2. Configure settings
+3. Start running
+</Steps>
+
+Here is a Starlight Card:
+<Card title="Introduction" icon="document">
+  Welcome to the premium card view.
+</Card>
+
+And a Docusaurus Admonition:
+:::note Note Title
+This is standard admonition text in v1.
+:::
+
+And a custom unknown fallback element:
+<CustomReactComponent user="alice" role="admin" />
+
 ## Summary
 
 This is version 1 of the comprehensive test document.

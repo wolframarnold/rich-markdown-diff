@@ -161,6 +161,10 @@ export function sanitizeHtml(html: string): string {
         "data-type",
         "data-tag",
         "data-original-content",
+        // MDX Custom Tab Attributes
+        "data-value",
+        "data-label",
+        "data-default",
         // Marp attributes
         "data-marpit-pagination",
         "data-marpit-pagination-total",
