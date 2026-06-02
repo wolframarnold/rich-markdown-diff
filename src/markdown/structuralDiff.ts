@@ -1452,8 +1452,9 @@ export function refineBlockDiffs(
         });
       }
 
+      const uniqueRunId = Math.random().toString(36).slice(2, 10);
       for (let i = 0; i < diffedPairs.length; i++) {
-        const placeholder = `PREDIFF_${i}_${Date.now()}_PLACEHOLDER`;
+        const placeholder = `PREDIFF_${i}_${uniqueRunId}_PLACEHOLDER`;
         resultHtml = resultHtml.replace(
           diffedPairs[i].delFull,
           () => placeholder,

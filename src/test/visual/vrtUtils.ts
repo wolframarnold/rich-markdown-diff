@@ -167,8 +167,9 @@ export async function generateVRTHtml(
   `;
 
   // Force layout classes if requested via placeholder in body class
+  const themeClass = options.theme === "dark" ? "vscode-dark" : "vscode-light";
   const layoutClass =
-    (options.inline ? "inline-mode" : "split-mode") + " vrt-layout";
+    (options.inline ? "inline-mode" : "split-mode") + " vrt-layout " + themeClass;
   const extraClasses = marpCss ? " marp-mode" : "";
   html = html.replace("VRT_LAYOUT_CLASS", layoutClass + extraClasses);
 

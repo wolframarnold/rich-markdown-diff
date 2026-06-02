@@ -45,9 +45,9 @@ function obsidianPlugin(md: MarkdownIt, _options: ObsidianOptions = {}) {
        return false;
     }
 
-    // Regexp for tag: start with letter, then alphanumeric, slash, or hyphen
-    // Simplified Obsidian-like tag regex
-    const tagRegex = /^#([a-zA-Z\d][\w\-/]*)/;
+    // Regexp for tag: must start with a Unicode letter, then contain alphanumeric, slash, underscore, or hyphen
+    // Fully supports multi-byte characters (Japanese, Chinese, etc.) as per Obsidian specifications.
+    const tagRegex = /^#(\p{L}[\p{L}\p{N}_/\-]*)/u;
     const match = src.slice(start).match(tagRegex);
 
     if (!match) {

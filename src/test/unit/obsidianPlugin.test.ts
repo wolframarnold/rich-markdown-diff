@@ -44,6 +44,17 @@ describe("MarkdownDiffProvider - Obsidian Plugin", () => {
     assert.ok(diff.includes("#project/task-123"), "Should contain the tag text");
   });
 
+  it("should render multi-byte tags correctly (Japanese & Chinese)", () => {
+    const oldMd = "";
+    const newMd = "#日本語タグ/サブタグ-1 #中文标签";
+    const { html: diff } = provider.computeDiff(oldMd, newMd);
+
+    assert.ok(diff.includes('data-tag="日本語タグ/サブタグ-1"'), "Should support Japanese tag");
+    assert.ok(diff.includes('data-tag="中文标签"'), "Should support Chinese tag");
+    assert.ok(diff.includes("#日本語タグ/サブタグ-1"), "Should contain Japanese tag text");
+    assert.ok(diff.includes("#中文标签"), "Should contain Chinese tag text");
+  });
+
   it("should render transclusions correctly (non-image)", () => {
     const oldMd = "";
     const newMd = "![[My Note]]";

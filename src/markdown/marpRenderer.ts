@@ -130,19 +130,65 @@ export function scopeMarpCss(
     return "";
   });
 
-  // Basic CSS scoping: prefix every selector with the scopeSelector.
-  // This is more robust than nesting, especially for older browsers.
-  const scoped = cleanedCss.replace(/([^\s{},][^{]*)\{/g, (match, selector) => {
-    // Avoid prefixing @media, @keyframes, etc.
-    if (selector.trim().startsWith("@")) {
-      return match;
+  // Scopes selectors robustly, avoiding keyframes inner selectors
+  let scoped = "";
+  let i = 0;
+  const stack: string[] = [];
+  let buffer = "";
+
+  while (i < cleanedCss.length) {
+    const char = cleanedCss[i];
+    if (char === "{") {
+      const selector = buffer.trim();
+      let isKeyframes = false;
+      let isOtherAtRule = false;
+
+      if (selector.startsWith("@")) {
+        isOtherAtRule = true;
+        if (/@keyframes\b/i.test(selector) || /@-webkit-keyframes\b/i.test(selector)) {
+          isKeyframes = true;
+        }
+      }
+
+      const inKeyframes = stack.includes("keyframes");
+
+      if (selector && !isOtherAtRule && !inKeyframes) {
+        const scopedSelector = selector
+          .split(",")
+          .map((s: string) => {
+            const trimmed = s.trim();
+            if (trimmed.startsWith("div.marpit")) {
+              return trimmed.replace(/^div\.marpit/, scopeSelector);
+            }
+            if (trimmed.startsWith(".marpit")) {
+              return trimmed.replace(/^\.marpit/, scopeSelector);
+            }
+            return `${scopeSelector} ${trimmed}`;
+          })
+          .join(", ");
+        scoped += scopedSelector + " {";
+      } else {
+        scoped += selector + " {";
+      }
+
+      if (isKeyframes) {
+        stack.push("keyframes");
+      } else if (isOtherAtRule) {
+        stack.push("at-rule");
+      } else {
+        stack.push("normal");
+      }
+      buffer = "";
+    } else if (char === "}") {
+      scoped += buffer + "}";
+      stack.pop();
+      buffer = "";
+    } else {
+      buffer += char;
     }
-    const scopedSelector = selector
-      .split(",")
-      .map((s: string) => `${scopeSelector} ${s.trim()}`)
-      .join(", ");
-    return `${scopedSelector} {`;
-  });
+    i++;
+  }
+  scoped += buffer;
 
   return {
     charsets,

@@ -1,6 +1,7 @@
 
 import * as assert from "assert";
 import { MarkdownDiffProvider } from "../../markdownDiff";
+import { scopeMarpCss } from "../../markdown/marpRenderer";
 
 describe("Marp Regression Tests", () => {
   let provider: MarkdownDiffProvider;
@@ -124,5 +125,27 @@ theme: gaia
       // Check if there are any diff tags
       assert.ok(hasDiff, "Should detect changes when frontmatter differs");
       assert.ok(html.includes("fm-changed"), "Frontmatter should show changes");
+  });
+
+  it("should scope Marp CSS correctly and preserve keyframes selectors without prefixing", () => {
+    const rawCss = `
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .test-class {
+        color: red;
+      }
+    `;
+    const { scoped } = scopeMarpCss(rawCss, "#left-pane .marpit");
+    
+    // Check normal class scoping
+    assert.ok(scoped.includes("#left-pane .marpit .test-class"), "Normal class should be scoped");
+    
+    // Check @keyframes preservation
+    assert.ok(scoped.includes("@keyframes fade-in"), "Keyframes statement should be preserved");
+    assert.ok(scoped.includes("from { opacity: 0; }"), "'from' selector inside keyframes should not be scoped");
+    assert.ok(scoped.includes("to { opacity: 1; }"), "'to' selector inside keyframes should not be scoped");
+    assert.ok(!scoped.includes("#left-pane .marpit from"), "'from' selector should not get prepended with scopeSelector");
   });
 });
