@@ -6,21 +6,18 @@ A professional VS Code extension for visual Markdown comparison. Compare rendere
 
 ## Key Features
 
-- **Visual Diff**: Compare rendered output instead of raw source code.
-- **Git Blame**: Hover to see commit history for any line in the diff view.
-- **Interactive Image Diff**: New "Swipe" and "Onion Skin" modes for visual image comparison.
-- **Marp Support**: Full visual diffing for Marp slide decks (`marp: true`).
-- **Git Integration**: Diff directly from Source Control view (Workspace, Staged, or HEAD).
-- **Obsidian Support**: Support for `#tag` and `![[link]]` transclusions.
-- **Quick Edit**: Modify image paths or block metadata directly within the diff view.
-- **Clipboard Compare**: Compare any Markdown file against your clipboard.
-- **Polished Rendering**: Theme-aware Mermaid output, block-aware math/code diffs, and locally scrollable wide tables.
-- **Rich Extensions**: Support for Math (KaTeX), Mermaid diagrams, GitHub Alerts, and more.
+- **Visual Diff**: Compare rendered HTML side-by-side or inline instead of raw source code.
+- **Git Integration**: Compare changes directly from the VS Code Source Control view (Workspace, Staged, or HEAD).
+- **Git Blame**: Hover over any line in the diff view to instantly see its commit author and history.
+- **Interactive Image Diff**: Compare visual changes in images using "Swipe" and "Onion Skin" comparison modes.
+- **Quick Edit**: Modify image paths and frontmatter metadata directly within the preview panels.
+- **Clipboard Compare**: Instantly compare any active Markdown file against your clipboard contents.
 
 ## Supported Extensions
 
 | Extension | Support Details |
 | --- | --- |
+| **MDX / Custom** | Native diffing for MDX, Docusaurus, and Astro Starlight components (Tabs, Steps, Badges, Cards, and Admonitions). |
 | **Marp** | Render and diff slide decks with full theme support. |
 | **Math** | High-quality KaTeX rendering for formulas. |
 | **Mermaid** | Flowcharts, sequence diagrams, and Gantt charts with VS Code theme-aware rendering. |
@@ -33,6 +30,7 @@ A professional VS Code extension for visual Markdown comparison. Compare rendere
 
 - 🖼️ **Marp Presentations**: Verify slide layout and theme changes visually.
 - 📚 **Knowledge Bases**: Review changes in foam/wiki notes with wikilinks and footnotes.
+- 🌐 **Modern Tech Docs**: Catch rendering issues in MDX, Docusaurus, and Astro Starlight components.
 - 📖 **Technical Docs**: Catch rendering issues in Mermaid diagrams, math formulas, and wide comparison tables.
 - 🔬 **Academic Writing**: Track revisions to LaTeX equations and complex tables.
 - 👥 **Peer Review**: Focus on the final rendered output rather than raw Markdown syntax.

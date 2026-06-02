@@ -1217,6 +1217,36 @@ export function getWebviewContent(
 
         /* Right Pane: Hide Old, Show New */
         body:not(.inline-mode) #right-pane .frontmatter-diff .fm-old { display: none; }
+        /* Force color-scheme inside Marp slides to match VS Code webview theme or system preference */
+        .vscode-dark .marp .marpit > svg,
+        .vscode-dark .marp .marpit > section,
+        .vscode-dark .marp section,
+        .vscode-dark .marp .marpit > svg > foreignObject > section {
+            color-scheme: dark !important;
+        }
+        .vscode-light .marp .marpit > svg,
+        .vscode-light .marp .marpit > section,
+        .vscode-light .marp section,
+        .vscode-light .marp .marpit > svg > foreignObject > section {
+            color-scheme: light !important;
+        }
+        @media (prefers-color-scheme: dark) {
+            .marp .marpit > svg,
+            .marp .marpit > section,
+            .marp section,
+            .marp .marpit > svg > foreignObject > section {
+                color-scheme: dark !important;
+            }
+        }
+        @media (prefers-color-scheme: light) {
+            .marp .marpit > svg,
+            .marp .marpit > section,
+            .marp section,
+            .marp .marpit > svg > foreignObject > section {
+                color-scheme: light !important;
+            }
+        }
+
         /* Marp Support */
         .marp:not(.pane), .marpit:not(.pane) {
             overflow: visible !important;

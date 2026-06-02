@@ -59,9 +59,8 @@ function wrapTablesForScrolling(html: string): string {
       const preceding = fullString.slice(0, offset).trim();
       const following = fullString.slice(offset + match.length).trim();
 
-      const isPrecededByScrollDiv = preceding.endsWith('<div class="table-scroll">') || 
-                                     preceding.endsWith("<div class=\"table-scroll\">");
-      const isFollowedByCloseDiv = following.startsWith("</div>");
+      const isPrecededByScrollDiv = /<div\b[^>]*\bclass=["'][^"']*\btable-scroll\b[^"']*["'][^>]*>\s*$/i.test(preceding);
+      const isFollowedByCloseDiv = /^\s*<\/div>/i.test(following);
 
       if (isPrecededByScrollDiv && isFollowedByCloseDiv) {
         return match;

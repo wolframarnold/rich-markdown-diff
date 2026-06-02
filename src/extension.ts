@@ -1168,45 +1168,7 @@ export function activate(context: vscode.ExtensionContext) {
       );
 
       // Helper to track active panel for shortcuts
-      panel.onDidChangeViewState((e) => {
-        if (e.webviewPanel.active) {
-          activePanel = e.webviewPanel;
-          vscode.commands.executeCommand(
-            "setContext",
-            "rich-markdown-diff.isDiffActive",
-            true,
-          );
-        } else {
-          if (activePanel === e.webviewPanel) {
-            activePanel = undefined;
-            vscode.commands.executeCommand(
-              "setContext",
-              "rich-markdown-diff.isDiffActive",
-              false,
-            );
-          }
-        }
-      });
-
-      panel.onDidDispose(() => {
-        if (activePanel === panel) {
-          activePanel = undefined;
-          vscode.commands.executeCommand(
-            "setContext",
-            "rich-markdown-diff.isDiffActive",
-            false,
-          );
-        }
-      });
-
-      if (panel.active) {
-        activePanel = panel;
-        vscode.commands.executeCommand(
-          "setContext",
-          "rich-markdown-diff.isDiffActive",
-          true,
-        );
-      }
+      attachPanelTracking(panel);
 
       panel.webview.html = webviewContent;
 

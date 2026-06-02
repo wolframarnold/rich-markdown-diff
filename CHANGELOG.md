@@ -11,6 +11,9 @@ All notable changes to **Rich Markdown Diff** will be documented in this file.
 ### Fixed in NEXT RELEASE
 
 - **Quick Edit**: Fixed a bug where the Quick Edit overlay loaded incorrect source text when editing documents that contain frontmatter metadata.
+- **Obsidian Tags**: Expanded the tag parser to support Japanese, Chinese, and other multi-byte characters.
+- **Marp Support**: Fixed slide transition animations and restored accurate dark/light theme styling in the webview.
+- **Stability & Rendering**: Resolved layout and event-handling bugs, including table scroll wrapping, code block placeholder collisions, and duplicate event listeners.
 
 ## [1.3.1] - 2026-05-24
 

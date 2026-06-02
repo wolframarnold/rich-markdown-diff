@@ -149,4 +149,13 @@ describe("MarkdownDiffProvider - Edge Cases", () => {
     const delOutput = provider.getWebviewContent(delInput, "", "", "", "");
     assert.ok(delOutput.includes(`<div class="table-scroll"><del class="diffdel diff-block">${table}</del></div>`), "Should wrap outer del rather than nesting block-in-inline");
   });
+
+  it("BUG-03: should not double-wrap tables even if table-scroll div has attributes and trailing whitespace/newlines", () => {
+    const table = "<table><tr><td>Cell</td></tr></table>";
+
+    const wrappedInput = `<div class="table-scroll" data-line="10">\n  ${table}\n</div>`;
+    const wrappedOutput = provider.getWebviewContent(wrappedInput, "", "", "", "");
+    
+    assert.ok(wrappedOutput.includes(wrappedInput), "Should not double-wrap already-wrapped table with attributes and spacing");
+  });
 });
