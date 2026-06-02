@@ -4,6 +4,10 @@ All notable changes to **Rich Markdown Diff** will be documented in this file.
 
 ## [NEXT RELEASE]
 
+### Added in NEXT RELEASE
+
+- **MDX & Custom Components**: Native rendering and high-fidelity diffs for MDX, Docusaurus, and Astro Starlight components. Supports interactive `<Tabs>`, inline `<Badge>` elements, timeline `<Steps>`, premium `<Card>` layouts, Docusaurus triple-colon admonitions (`:::note` etc.), and graceful visual fallbacks for custom JSX/TSX tags.
+
 ### Fixed in NEXT RELEASE
 
 - **Quick Edit**: Fixed a bug where the Quick Edit overlay loaded incorrect source text when editing documents that contain frontmatter metadata.

@@ -164,6 +164,55 @@ SOFTWARE.
 
 ![Icon V2](img_v2.svg)
 
+## MDX and Custom Components
+
+<Tabs>
+  <TabItem value="npm" label="NPM" default>
+    - Install package globally:
+      ```bash
+      npm install -g my-package
+      ```
+  </TabItem>
+  <TabItem value="yarn" label="Yarn">
+    - Install package:
+      ```bash
+      yarn add my-package
+      ```
+  </TabItem>
+  <TabItem value="pnpm" label="PNPM">
+    - Install package:
+      ```bash
+      pnpm add my-package
+      ```
+  </TabItem>
+</Tabs>
+
+Let's test inline badges: <Badge text="Warning" variant="warning" /> and <Badge text="Removed" variant="danger" />.
+
+And here is a Starlight steps component:
+<Steps>
+1. Download the tool (new version)
+2. Configure settings securely
+3. Start running the process
+</Steps>
+
+Here is a Starlight Card:
+<Card title="Introduction" icon="note">
+  Welcome to the premium card view, now with updated content.
+</Card>
+
+And a Docusaurus Admonition:
+:::note Note Title
+This is standard admonition text with updates in v2.
+:::
+
+:::danger Warning
+Critical warning!
+:::
+
+And a custom unknown fallback element:
+<CustomReactComponent user="alice" role="super-admin" theme="dark" />
+
 ## Summary
 
 This is version 2 of the comprehensive test document with modifications.
