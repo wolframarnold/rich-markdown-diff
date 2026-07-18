@@ -31,7 +31,12 @@ describe("MarkdownDiffProvider - Edge Cases", () => {
     // It should be wrapped in a single del with diff-block class
     assert.ok(diff.includes("diff-block"), "Should have diff-block class for code block deletion");
     assert.ok(diff.includes("<pre"), "Should contain the pre tag");
-    assert.ok(diff.match(/<del[^>]*class="[^"]*diff-block[^"]*"[^>]*>\s*<pre/im), "del tag should wrap pre tag");
+    // The del tag wraps the code-block-wrapper div which contains pre
+    assert.ok(
+      diff.match(/<del[^>]*class="[^"]*diff-block[^"]*"[^>]*>\s*<div class="code-block-wrapper"[^>]*>\s*<pre/im) ||
+      diff.match(/<del[^>]*class="[^"]*diff-block[^"]*"[^>]*>\s*<pre/im),
+      "del tag should wrap code block (via code-block-wrapper div or directly)",
+    );
   });
 
   it("should highlight added horizontal rules with diff-block", () => {
@@ -147,7 +152,7 @@ describe("MarkdownDiffProvider - Edge Cases", () => {
     // 2. Table inside del should wrap the del container, not the table inside it
     const delInput = `<del class="diffdel diff-block">${table}</del>`;
     const delOutput = provider.getWebviewContent(delInput, "", "", "", "");
-    assert.ok(delOutput.includes(`<div class="table-scroll"><del class="diffdel diff-block">${table}</del></div>`), "Should wrap outer del rather than nesting block-in-inline");
+    assert.ok(delOutput.includes(`<div class="table-block-wrapper"><div class="table-scroll"><del class="diffdel diff-block">${table}</del></div></div>`), "Should wrap outer del rather than nesting block-in-inline");
   });
 
   it("BUG-03: should not double-wrap tables even if table-scroll div has attributes and trailing whitespace/newlines", () => {

@@ -450,6 +450,8 @@ export function getWebviewContent(
         dl,
         blockquote,
         pre,
+        .code-block-wrapper,
+        .table-block-wrapper,
         .table-scroll,
         hr,
         .markdown-alert,
@@ -511,6 +513,17 @@ export function getWebviewContent(
           background-color: transparent;
           padding: 0;
           border-radius: 0;
+        }
+        /* Wrapper around <pre> code blocks to avoid the gutter marker being clipped
+           by pre's overflow-x: auto scroll container. The wrapper stays overflow:
+           visible so the ::after gutter bar can appear in the left gutter padding. */
+        .code-block-wrapper {
+            position: relative;
+            overflow: visible;
+            margin-bottom: var(--markdown-block-spacing);
+        }
+        .code-block-wrapper pre {
+            margin-bottom: 0;
         }
         pre {
             background-color: var(--vscode-textCodeBlock-background, var(--markdown-raised-background));
@@ -690,6 +703,11 @@ export function getWebviewContent(
         p > img:only-child {
           display: block;
         }
+        .table-block-wrapper {
+            position: relative;
+            overflow: visible;
+            margin-bottom: var(--markdown-block-spacing);
+        }
         .table-scroll {
           width: 100%;
           max-width: 100%;
@@ -834,6 +852,7 @@ export function getWebviewContent(
         ins:has(.footnote-item), del:has(.footnote-item),
         ins:has(li), del:has(li),
         ins:has(pre), del:has(pre),
+        ins:has(.code-block-wrapper), del:has(.code-block-wrapper),
         ins:has(table), del:has(table),
         ins:has(h1), del:has(h1),
         ins:has(h2), del:has(h2),
@@ -862,7 +881,7 @@ export function getWebviewContent(
 
 
         /* Container Borders for Block Diffs (Alerts, Code, Mermaid) */
-        :is(.markdown-alert, .mermaid, pre):is(:has(ins), :has(del), :parent(ins), :parent(del), .diffins, .diffdel) {
+        :is(.markdown-alert, .mermaid, pre, .code-block-wrapper):is(:has(ins), :has(del), :parent(ins), :parent(del), .diffins, .diffdel) {
             position: relative;
         }
 
@@ -955,8 +974,8 @@ export function getWebviewContent(
 
 
 
-        ins:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure),
-        del:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure) {
+        ins:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-block-wrapper, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure),
+        del:has(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > .table-block-wrapper, > .table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure) {
             display: block;
           width: fit-content;
           max-width: 100%;
@@ -1344,14 +1363,14 @@ export function getWebviewContent(
         }
 
         /* Specific High Visibility for Complex Blocks (Code/Mermaid/Math) */
-        pre.selected-change,
+        :is(pre, .code-block-wrapper).selected-change,
         .mermaid.selected-change, 
         .katex-block.selected-change {
             overflow: visible !important;
             display: block; 
         }
 
-        pre.selected-change.selected-ins,
+        :is(pre, .code-block-wrapper).selected-change.selected-ins,
         .mermaid.selected-change.selected-ins,
         .katex-block.selected-change.selected-ins {
           background-color: rgba(34, 197, 94, 0.25) !important;
@@ -1359,7 +1378,7 @@ export function getWebviewContent(
           box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.8) !important;
         }
 
-        pre.selected-change.selected-del,
+        :is(pre, .code-block-wrapper).selected-change.selected-del,
         .mermaid.selected-change.selected-del,
         .katex-block.selected-change.selected-del {
           background-color: rgba(248, 113, 113, 0.2) !important;
@@ -1367,12 +1386,16 @@ export function getWebviewContent(
           box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.8) !important;
         }
 
-        pre.selected-change.selected-mod,
+        :is(pre, .code-block-wrapper).selected-change.selected-mod,
         .mermaid.selected-change.selected-mod,
         .katex-block.selected-change.selected-mod {
           background-color: rgba(59, 130, 246, 0.08) !important;
           border: 1px solid rgba(59, 130, 246, 0.9) !important;
           box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+        }
+
+        .code-block-wrapper.selected-change pre {
+            background-color: transparent !important;
         }
 
         /* Image Focus Style (same as Mermaid) */
@@ -2730,13 +2753,13 @@ export function getWebviewContent(
                 const getComplexContainer = (el) => {
                   // Case 1: The change is inside a complex visual block like Mermaid or KaTeX.
                   // Table and stable code-block diffs stay granular so the ruler and selection can stay local.
-                  const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg');
+                  const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg') || el.closest('.code-block-wrapper');
                     if (ancestor) return ancestor;
 
                   // Case 2: The change wraps a complex visual block (e.g. a new code block or diagram added)
                   // We prefer the child container for highlighting as it's the visual element.
                     if (el.querySelector) {
-                     let child = el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block');
+                     let child = el.querySelector('.code-block-wrapper') || el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block');
                          if (!child) {
                              // Only treat SVG as complex if it's NOT an alert icon
                              const svg = el.querySelector('svg');

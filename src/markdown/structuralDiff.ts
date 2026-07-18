@@ -960,6 +960,20 @@ export function replaceBalancedTags(
       }
     }
 
+    if (options.tokenizeCodeBlocks !== false && html.startsWith('<div class="code-block-wrapper">', i)) {
+      const start = i;
+      const end = findClosing(html, i, "div");
+      if (end > -1) {
+        const content = html.substring(start, end);
+        const token = createToken(content, "CODEBLOCK", tokens);
+        result += token;
+        i = end;
+        continue;
+      }
+    }
+
+    // Fallback: also tokenize bare <pre> elements (e.g. from Marp or other renderers
+    // that do not use the code-block-wrapper div).
     if (options.tokenizeCodeBlocks !== false && html.startsWith("<pre", i)) {
       const start = i;
       const end = findClosing(html, i, "pre");
@@ -1053,8 +1067,8 @@ export function replaceBalancedTags(
       }
     }
 
-    // Tables (already covered by listRegex, but keeping for compatibility if listRegex doesn't match for some reason)
-    if (html.startsWith("<table", i)) {
+    // Tables (fallback when list/table container tokenization is disabled)
+    if (options.tokenizeListContainers === false && html.startsWith("<table", i)) {
       const start = i;
       const end = findClosing(html, i, "table");
       if (end > -1) {
@@ -1400,57 +1414,89 @@ export function refineBlockDiffs(
 
   // NOTE: We cannot use a simple adjacency regex (del<pre></pre>del ins<pre></pre>ins) because
   // other diff elements (e.g. a deleted section) may sit between the del-pre and ins-pre blocks.
-  // Instead, collect all del-wrapped and ins-wrapped <pre> blocks globally, pair them by index,
+  // Instead, collect all del-wrapped and ins-wrapped code blocks globally, pair them by index,
   // re-diff each pair, and substitute back via placeholder tokens.
+  //
+  // Code blocks may appear as:
+  //   A) <del><div class="code-block-wrapper"><pre ...>...</pre></div></del>  (standard renderer)
+  //   B) <del><pre ...>...</pre></del>                                        (bare, e.g. Marp)
   {
+    interface PreBlock {
+      full: string;
+      wrapperAttrs: string; // div attrs (empty string for bare <pre>)
+      preAttrs: string;
+      inner: string;
+      isWrapped: boolean;   // true → code-block-wrapper present
+    }
+    const delWrappedBlocks: PreBlock[] = [];
+    const insWrappedBlocks: PreBlock[] = [];
+    const delBareBlocks: PreBlock[] = [];
+    const insBareBlocks: PreBlock[] = [];
+
+    // Pattern A: del/ins wrapping the code-block-wrapper div
+    const delWrappedRegex =
+      /<del([^>]*)>\s*<div class="code-block-wrapper"([^>]*)>\s*<pre([^>]*)>([\s\S]*?)<\/pre>\s*<\/div>\s*<\/del>/gi;
+    const insWrappedRegex =
+      /<ins([^>]*)>\s*<div class="code-block-wrapper"([^>]*)>\s*<pre([^>]*)>([\s\S]*?)<\/pre>\s*<\/div>\s*<\/ins>/gi;
+
+    let m: RegExpExecArray | null;
+    while ((m = delWrappedRegex.exec(resultHtml)) !== null) {
+      delWrappedBlocks.push({ full: m[0], wrapperAttrs: m[2], preAttrs: m[3], inner: m[4], isWrapped: true });
+    }
+    while ((m = insWrappedRegex.exec(resultHtml)) !== null) {
+      insWrappedBlocks.push({ full: m[0], wrapperAttrs: m[2], preAttrs: m[3], inner: m[4], isWrapped: true });
+    }
+
+    // Pattern B: del/ins wrapping a bare <pre> (fallback for Marp etc.)
     const delPreRegex =
       /<del([^>]*)>\s*<pre([^>]*)>([\s\S]*?)<\/pre>\s*<\/del>/gi;
     const insPreRegex =
       /<ins([^>]*)>\s*<pre([^>]*)>([\s\S]*?)<\/pre>\s*<\/ins>/gi;
 
-    interface PreBlock {
-      full: string;
-      preAttrs: string;
-      inner: string;
-    }
-    const delBlocks: PreBlock[] = [];
-    const insBlocks: PreBlock[] = [];
-
-    let m: RegExpExecArray | null;
     while ((m = delPreRegex.exec(resultHtml)) !== null) {
-      delBlocks.push({
-        full: m[0],
-        preAttrs: m[2],
-        inner: m[3],
-      });
+      delBareBlocks.push({ full: m[0], wrapperAttrs: "", preAttrs: m[2], inner: m[3], isWrapped: false });
     }
     while ((m = insPreRegex.exec(resultHtml)) !== null) {
-      insBlocks.push({
-        full: m[0],
-        preAttrs: m[2],
-        inner: m[3],
+      insBareBlocks.push({ full: m[0], wrapperAttrs: "", preAttrs: m[2], inner: m[3], isWrapped: false });
+    }
+
+    const diffedPairs: Array<{
+      delFull: string;
+      insFull: string;
+      diffed: string;
+    }> = [];
+
+    const pairWrappedCount = Math.min(delWrappedBlocks.length, insWrappedBlocks.length);
+    for (let i = 0; i < pairWrappedCount; i++) {
+      const innerDiff = diffCodeBlocks(
+        delWrappedBlocks[i].inner,
+        insWrappedBlocks[i].inner,
+      );
+      const diffedPre = `<pre${insWrappedBlocks[i].preAttrs}>${innerDiff}</pre>`;
+      const diffed = `<div class="code-block-wrapper"${insWrappedBlocks[i].wrapperAttrs}>${diffedPre}</div>`;
+      diffedPairs.push({
+        delFull: delWrappedBlocks[i].full,
+        insFull: insWrappedBlocks[i].full,
+        diffed,
       });
     }
 
-    const pairCount = Math.min(delBlocks.length, insBlocks.length);
+    const pairBareCount = Math.min(delBareBlocks.length, insBareBlocks.length);
+    for (let i = 0; i < pairBareCount; i++) {
+      const innerDiff = diffCodeBlocks(
+        delBareBlocks[i].inner,
+        insBareBlocks[i].inner,
+      );
+      const diffedPre = `<pre${insBareBlocks[i].preAttrs}>${innerDiff}</pre>`;
+      diffedPairs.push({
+        delFull: delBareBlocks[i].full,
+        insFull: insBareBlocks[i].full,
+        diffed: diffedPre,
+      });
+    }
+
+    const pairCount = diffedPairs.length;
     if (pairCount > 0) {
-      const diffedPairs: Array<{
-        delFull: string;
-        insFull: string;
-        diffed: string;
-      }> = [];
-      for (let i = 0; i < pairCount; i++) {
-        // Diff ONLY the inner content of the pre block
-        const innerDiff = diffCodeBlocks(
-          delBlocks[i].inner,
-          insBlocks[i].inner,
-        );
-        diffedPairs.push({
-          delFull: delBlocks[i].full,
-          insFull: insBlocks[i].full,
-          diffed: `<pre${insBlocks[i].preAttrs}>${innerDiff}</pre>`,
-        });
-      }
 
       const uniqueRunId = Math.random().toString(36).slice(2, 10);
       for (let i = 0; i < diffedPairs.length; i++) {
@@ -1771,10 +1817,15 @@ export function normalizeMathBlockDiffs(html: string): string {
 }
 
 export function cleanupCheckboxArtifacts(html: string): string {
-  return html.replace(
-    /(<input[^>]+class="task-list-item-checkbox"[^>]*>)(\s*)(?=(?:<p\b|<div\b|<ins[^>]*>\s*\[))/gi,
+  let result = html.replace(
+    /(<input[^>]+class="task-list-item-checkbox"[^>]*>)(\s*)(?=(?:<p\b|<div\b|<del[^>]*>\s*\[))/gi,
     '<del class="diffdel">$1</del>$2',
   );
+  result = result.replace(
+    /(<input[^>]+class="task-list-item-checkbox"[^>]*>)(\s*)(?=(?:<p\b|<div\b|<ins[^>]*>\s*\[))/gi,
+    '<ins class="diffins">$1</ins>$2',
+  );
+  return result;
 }
 
 export function stripDataLineAttributes(html: string): string {
@@ -2213,42 +2264,38 @@ export function verifyDiffIntegrity(
     return true; // Nothing to check
   }
 
-  const diffWordsSet = new Set(getWords(diffText));
-
-  // Sample a subset of words to check to avoid performance issues on huge documents
-  // but ensure we check enough to detect truncation.
-  const sampleSize = Math.min(newWords.length, 200);
-  const step = Math.max(1, Math.floor(newWords.length / sampleSize));
-
-  let missingCount = 0;
-  let checkedCount = 0;
-  for (let i = 0; i < newWords.length; i += step) {
-    const word = newWords[i];
-    checkedCount++;
-    if (!diffWordsSet.has(word)) {
-      missingCount++;
-    }
+  const diffWordsMap = new Map<string, number>();
+  for (const word of getWords(diffText)) {
+    diffWordsMap.set(word, (diffWordsMap.get(word) || 0) + 1);
   }
 
-  // Allow a very small margin of error (e.g. 1.0%) for edge cases where htmldiff
-  // might legitimately combine or slightly transform words (e.g. case changes, punctuation).
-  const failureThreshold = 0.01; // 1.0% margin of error
-  const missingRatio = checkedCount > 0 ? missingCount / checkedCount : 0;
+  const newWordsMap = new Map<string, number>();
+  for (const word of newWords) {
+    newWordsMap.set(word, (newWordsMap.get(word) || 0) + 1);
+  }
+
+  let missingCount = 0;
+  let totalChecked = 0;
+  const missingWords: string[] = [];
+
+  for (const [word, newCount] of newWordsMap.entries()) {
+    const diffCount = diffWordsMap.get(word) || 0;
+    if (diffCount < newCount) {
+      missingCount += (newCount - diffCount);
+      if (missingWords.length < 10) {
+        missingWords.push(word);
+      }
+    }
+    totalChecked += newCount;
+  }
+
+  const failureThreshold = 0.02; // 2.0% margin of error
+  const missingRatio = totalChecked > 0 ? missingCount / totalChecked : 0;
   const isBroken = missingRatio > failureThreshold;
 
   if (isBroken) {
-    const missingWords = [];
-    for (let i = 0; i < newWords.length; i += step) {
-      const word = newWords[i];
-      if (!diffWordsSet.has(word)) {
-        missingWords.push(word);
-        if (missingWords.length >= 10) {
-          break;
-        }
-      }
-    }
     console.warn(
-      `Integrity check failed: missing ${missingCount}/${checkedCount} words (${(missingRatio * 100).toFixed(1)}%). Missing: ${missingWords.join(", ")}`,
+      `Integrity check failed: missing ${missingCount}/${totalChecked} words (${(missingRatio * 100).toFixed(1)}%). Missing: ${missingWords.join(", ")}`,
     );
     return false;
   }

@@ -66,12 +66,14 @@ async function main() {
       "index",
     );
     const runtimeRoot = path.join(
-      os.tmpdir(),
-      `rich-markdown-diff-host-${Date.now()}`,
+      extensionDevelopmentPath,
+      ".vscode-test",
+      "user-data-dir",
     );
     const userDataDir = path.join(runtimeRoot, "user-data");
     const extensionsDir = path.join(runtimeRoot, "extensions");
 
+    await fs.rm(runtimeRoot, { recursive: true, force: true });
     await fs.mkdir(userDataDir, { recursive: true });
     await fs.mkdir(extensionsDir, { recursive: true });
 
