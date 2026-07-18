@@ -67,6 +67,8 @@ export async function resolveBlameInfo(
     // \t<line_content>
     const child = child_process.spawn("git", ["blame", "--porcelain", fileName], { cwd });
 
+    child.stderr?.resume();
+
     const rl = readline.createInterface({
       input: child.stdout,
       crlfDelay: Infinity,

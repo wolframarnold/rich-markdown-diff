@@ -55,18 +55,18 @@ function wrapTablesForScrolling(html: string): string {
   return html.replace(
     tableRegex,
     (match, tagType, tagAttrs, offset, fullString) => {
-      // Check if this match is already wrapped in a div.table-scroll
+      // Check if this match is already wrapped in a div.table-scroll/table-block-wrapper
       const preceding = fullString.slice(0, offset).trim();
       const following = fullString.slice(offset + match.length).trim();
 
-      const isPrecededByScrollDiv = /<div\b[^>]*\bclass=["'][^"']*\btable-scroll\b[^"']*["'][^>]*>\s*$/i.test(preceding);
-      const isFollowedByCloseDiv = /^\s*<\/div>/i.test(following);
+      const isPrecededByScrollDiv = /<div\b[^>]*\bclass=["'][^"']*\b(table-scroll|table-block-wrapper)\b[^"']*["'][^>]*>\s*(?:<div\b[^>]*\bclass=["'][^"']*\btable-scroll\b[^"']*["'][^>]*>\s*)?$/i.test(preceding);
+      const isFollowedByCloseDiv = /^\s*<\/div>\s*(?:<\/div>)?/i.test(following);
 
       if (isPrecededByScrollDiv && isFollowedByCloseDiv) {
         return match;
       }
 
-      return `<div class="table-scroll">${match}</div>`;
+      return `<div class="table-block-wrapper"><div class="table-scroll">${match}</div></div>`;
     }
   );
 }

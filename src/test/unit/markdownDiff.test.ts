@@ -852,7 +852,7 @@ describe("MarkdownDiffProvider", () => {
     );
     assert.ok(
       webviewContent.includes(
-        "const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg');",
+        "const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg') || el.closest('.code-block-wrapper');",
       ),
       "Complex visual blocks like Mermaid and KaTeX should still be promoted to their rendered container while stable code blocks stay granular",
     );
@@ -992,15 +992,15 @@ describe("MarkdownDiffProvider", () => {
     );
     assert.ok(
       webviewContent.includes(
-        "const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg');",
+        "const ancestor = el.closest('.mermaid') || el.closest('.katex-block') || el.closest('svg') || el.closest('.code-block-wrapper');",
       ),
-      "Stable code blocks with inner line diffs should stay granular instead of being promoted through closest('pre')",
+      "Stable code blocks with inner line diffs should be promoted to .code-block-wrapper as a stable anchor",
     );
     assert.ok(
       webviewContent.includes(
-        "let child = el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block');",
+        "let child = el.querySelector('.code-block-wrapper') || el.querySelector('pre') || el.querySelector('.mermaid') || el.querySelector('.katex-block');",
       ),
-      "Wrapped code-block insertions should resolve to the pre container for active highlighting",
+      "Wrapped code-block insertions should resolve to the .code-block-wrapper container for active highlighting",
     );
     assert.ok(
       webviewContent.includes(".selected-change.selected-ins {") &&
@@ -1010,7 +1010,7 @@ describe("MarkdownDiffProvider", () => {
       "Inserted active changes should use green selection styling instead of the old yellow overlay",
     );
     assert.ok(
-      webviewContent.includes("pre.selected-change.selected-ins,") &&
+      webviewContent.includes(":is(pre, .code-block-wrapper).selected-change.selected-ins,") &&
         webviewContent.includes("border: 1px solid #22c55e !important;") &&
         webviewContent.includes(
           "box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.8) !important;",
@@ -1052,10 +1052,10 @@ describe("MarkdownDiffProvider", () => {
       "heading-prefix class should prevent number prefixes from wrapping",
     );
     assert.ok(
-      /ins:has\(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > \.table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure\),[\s\S]*del:has\(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > \.table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure\) \{[\s\S]*display: block;[\s\S]*width: fit-content;/m.test(
+      /ins:has\(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > \.table-block-wrapper, > \.table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure\),[\s\S]*del:has\(> h1, > h2, > h3, > h4, > h5, > h6, > p, > img, > table, > \.table-block-wrapper, > \.table-scroll, > ul, > ol, > dl, > li, > blockquote, > div, > pre, > hr, > section, > details, > summary, > figure\) \{[\s\S]*display: block;[\s\S]*width: fit-content;/m.test(
         webviewContent,
       ),
-      "Modified headings should be set as block elements so the background color spans the full pane width",
+      "Modified headings should be set as block elements so the background color spans the full width",
     );
   });
 
@@ -1175,7 +1175,7 @@ describe("MarkdownDiffProvider", () => {
     );
 
     assert.ok(
-      /<div class="table-scroll">\s*<table>/m.test(webviewContent),
+      /<div class="table-block-wrapper"><div class="table-scroll">\s*<table>/m.test(webviewContent),
       "Tables should be wrapped in a dedicated scroll container so wide tables scroll locally instead of stretching the pane",
     );
     assert.ok(

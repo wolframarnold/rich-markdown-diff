@@ -13,7 +13,12 @@ All notable changes to **Rich Markdown Diff** will be documented in this file.
 - **Quick Edit**: Fixed a bug where the Quick Edit overlay loaded incorrect source text when editing documents that contain frontmatter metadata.
 - **Obsidian Tags**: Expanded the tag parser to support Japanese, Chinese, and other multi-byte characters.
 - **Marp Support**: Fixed slide transition animations and restored accurate dark/light theme styling in the webview.
-- **Stability & Rendering**: Resolved layout and event-handling bugs, including table scroll wrapping, code block placeholder collisions, and duplicate event listeners.
+- **Stability & Rendering**:
+  - Fixed horizontal scroll clipping of line highlights on code blocks and tables.
+  - Resolved visual alignment and active highlight issues for embedded code blocks and task list checkboxes.
+  - Fixed potential memory leaks in clipboard comparisons and child process hangs in Git Blame.
+- **Compare Commands**: Fixed a bug where comparing a file with itself opened a blank diff panel.
+
 
 ## [1.3.1] - 2026-05-24
 

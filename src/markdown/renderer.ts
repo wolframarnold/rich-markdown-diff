@@ -99,7 +99,11 @@ function configureRules(md: MarkdownIt) {
       return `<div class="mermaid"${attrs} data-original-content="${escapedContent}">\n${escapedContent}\n</div>`;
     }
 
-    return defaultFence(tokens, idx, options, env, self);
+    // Wrap code blocks in a container div so that the ::after gutter marker
+    // (positioned at left: -16px) is not clipped by <pre>'s overflow-x: auto,
+    // which creates a scroll container that clips absolutely-positioned children.
+    const rendered = defaultFence(tokens, idx, options, env, self);
+    return `<div class="code-block-wrapper">${rendered}</div>`;
   };
 
   // Image Resolver Support
