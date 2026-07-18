@@ -935,6 +935,14 @@ async function createAndBindDiffPanel(
     getDiffPanelOptions(context),
   );
 
+  context.subscriptions.push(panel);
+  panel.onDidDispose(() => {
+    const idx = context.subscriptions.indexOf(panel);
+    if (idx > -1) {
+      context.subscriptions.splice(idx, 1);
+    }
+  });
+
   await bindDiffPanel(panel, context, resolveState);
   return panel;
 }
@@ -1170,10 +1178,12 @@ export function activate(context: vscode.ExtensionContext) {
       // Helper to track active panel for shortcuts
       attachPanelTracking(panel);
 
+      context.subscriptions.push(panel);
+
       panel.webview.html = webviewContent;
 
       // Handle Double Click
-      panel.webview.onDidReceiveMessage((message) => {
+      const messageDisposable = panel.webview.onDidReceiveMessage((message) => {
         if (message.command === "openSource") {
           const side = message.side;
           const line = message.line;
@@ -1196,6 +1206,14 @@ export function activate(context: vscode.ExtensionContext) {
                 }
               });
           }
+        }
+      });
+
+      panel.onDidDispose(() => {
+        messageDisposable.dispose();
+        const idx = context.subscriptions.indexOf(panel);
+        if (idx > -1) {
+          context.subscriptions.splice(idx, 1);
         }
       });
     },
@@ -1373,6 +1391,7 @@ export function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(
             l10n.t("You are comparing the same file."),
           );
+          return;
         }
 
         void showTwoFilesDiff(selectedForCompareUri, targetUri, context);
