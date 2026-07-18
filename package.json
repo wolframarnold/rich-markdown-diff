@@ -287,12 +287,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.61.1",
+    "@playwright/test": "1.60.0",
     "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.1.1",
     "@types/sanitize-html": "^2.16.1",
-    "@types/vscode": "1.125.0",
+    "@types/vscode": "1.80.0",
     "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.63.0",
     "@vscode/l10n-dev": "^0.0.35",
@@ -305,7 +305,7 @@
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
     "ovsx": "^1.0.2",
-    "playwright": "^1.61.1",
+    "playwright": "1.60.0",
     "ts-node": "^10.9.2",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.63.0"
