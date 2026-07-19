@@ -64,6 +64,8 @@ function wikilinksPlugin(md: MarkdownIt, options: WikilinkOptions = {}) {
     if (!silent) {
       const linkOpen = state.push("link_open", "a", 1);
       linkOpen.attrSet("href", createHref(pageName, uriSuffix));
+      linkOpen.attrSet("class", "wikilink");
+      linkOpen.attrSet("data-page", pageName);
 
       const text = state.push("text", "", 0);
       text.content = label;

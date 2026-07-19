@@ -845,7 +845,11 @@ export function restoreBlockAttributes(
         let res;
         const inDel = tagStack.includes("del");
         const inIns = tagStack.includes("ins");
-        if (inDel) {
+        
+        const isOnlyInOld = oldPools[key] && (!newPools[key] || newPools[key].length === 0);
+        const isOnlyInNew = newPools[key] && (!oldPools[key] || oldPools[key].length === 0);
+
+        if (inDel || isOnlyInOld) {
           const idx = oldCounters[key] || 0;
           const pool = oldPools[key] || [];
           res = pool[idx] || pool[pool.length - 1] || "";
@@ -858,7 +862,7 @@ export function restoreBlockAttributes(
           newCounters[key] = idx + 1;
 
           // Also increment old counter if shared to keep them "aligned" where possible
-          if (!inIns) {
+          if (!inIns && !isOnlyInNew) {
             oldCounters[key] = (oldCounters[key] || 0) + 1;
           }
         }
@@ -1220,32 +1224,36 @@ export function refineBlockDiffs(
   resultHtml = resultHtml.replace(
     alertRegex,
     (match, delBlock, oldInner, insBlock, newInner) => {
-      const alertCount = (
-        newInner.match(/<div[^>]*class="markdown-alert/g) || []
-      ).length;
-      if (alertCount > 1) {
-        return match;
-      }
-
-      const titleRegex = /<p class="markdown-alert-title">([\s\S]*?)<\/p>/;
-      const oldTitleMatch = oldInner.match(titleRegex);
-      const newTitleMatch = newInner.match(titleRegex);
+      const openTagRegex = /^<div class="markdown-alert[^>]*>/;
+      const oldOpenMatch = oldInner.match(openTagRegex);
+      const newOpenMatch = newInner.match(openTagRegex);
 
       if (
-        oldTitleMatch &&
-        newTitleMatch &&
-        oldTitleMatch[0] === newTitleMatch[0]
+        oldOpenMatch &&
+        newOpenMatch &&
+        oldInner.endsWith("</div>") &&
+        newInner.endsWith("</div>")
       ) {
-        const titleHtml = oldTitleMatch[0];
-        const oldBody = oldInner.replace(titleHtml, "").trim();
-        const newBody = newInner.replace(titleHtml, "").trim();
-        const diffBody = execute(oldBody, newBody);
-        const openTagRegex = /^<div class="markdown-alert[^>]*>/;
-        const openTagMatch = newInner.match(openTagRegex);
-        const openTag = openTagMatch
-          ? openTagMatch[0]
-          : '<div class="markdown-alert">';
-        return `${openTag}${titleHtml}\n${diffBody}</div>`;
+        const oldOpen = oldOpenMatch[0];
+        const newOpen = newOpenMatch[0];
+        const oldContent = oldInner.substring(oldOpen.length, oldInner.length - 6).trim();
+        const newContent = newInner.substring(newOpen.length, newInner.length - 6).trim();
+
+        const titleRegex = /<p class="markdown-alert-title">([\s\S]*?)<\/p>/;
+        const oldTitleMatch = oldContent.match(titleRegex);
+        const newTitleMatch = newContent.match(titleRegex);
+
+        if (
+          oldTitleMatch &&
+          newTitleMatch &&
+          oldTitleMatch[0] === newTitleMatch[0]
+        ) {
+          const titleHtml = oldTitleMatch[0];
+          const oldBody = oldContent.replace(titleHtml, "").trim();
+          const newBody = newContent.replace(titleHtml, "").trim();
+          const diffBody = execute(oldBody, newBody);
+          return `${newOpen}${titleHtml}\n${diffBody}</div>`;
+        }
       }
 
       return replacer(match, delBlock, oldInner, insBlock, newInner);

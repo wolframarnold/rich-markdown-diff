@@ -2,13 +2,14 @@
 
 All notable changes to **Rich Markdown Diff** will be documented in this file.
 
-## [NEXT RELEASE]
+## [1.4.0] - 2026-07-19
 
-### Added in NEXT RELEASE
+### Added in 1.4.0
 
 - **MDX & Custom Components**: Native rendering and high-fidelity diffs for MDX, Docusaurus, and Astro Starlight components. Supports interactive `<Tabs>`, inline `<Badge>` elements, timeline `<Steps>`, premium `<Card>` layouts, Docusaurus triple-colon admonitions (`:::note` etc.), and graceful visual fallbacks for custom JSX/TSX tags.
+- **Interactive Wikilinks**: Click to open local target files directly from `[[Wiki-Style Links]]` in the diff view.
 
-### Fixed in NEXT RELEASE
+### Fixed in 1.4.0
 
 - **Quick Edit**: Fixed a bug where the Quick Edit overlay loaded incorrect source text when editing documents that contain frontmatter metadata.
 - **Obsidian Tags**: Expanded the tag parser to support Japanese, Chinese, and other multi-byte characters.
@@ -17,8 +18,9 @@ All notable changes to **Rich Markdown Diff** will be documented in this file.
   - Fixed horizontal scroll clipping of line highlights on code blocks and tables.
   - Resolved visual alignment and active highlight issues for embedded code blocks and task list checkboxes.
   - Fixed potential memory leaks in clipboard comparisons and child process hangs in Git Blame.
+  - Fixed duplicate containers in GitHub Alerts and incorrect numbering in Starlight `<Steps>`.
+  - Added outline and background highlights for active cells in frontmatter diffs.
 - **Compare Commands**: Fixed a bug where comparing a file with itself opened a blank diff panel.
-
 
 ## [1.3.1] - 2026-05-24
 

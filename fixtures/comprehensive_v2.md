@@ -191,12 +191,14 @@ Let's test inline badges: <Badge text="Warning" variant="warning" /> and <Badge 
 
 And here is a Starlight steps component:
 <Steps>
+
 1. Download the tool (new version)
 2. Configure settings securely
 3. Start running the process
-</Steps>
+   </Steps>
 
 Here is a Starlight Card:
+
 <Card title="Introduction" icon="note">
   Welcome to the premium card view, now with updated content.
 </Card>
@@ -211,6 +213,7 @@ Critical warning!
 :::
 
 And a custom unknown fallback element:
+
 <CustomReactComponent user="alice" role="super-admin" theme="dark" />
 
 ## Summary
