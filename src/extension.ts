@@ -880,6 +880,28 @@ async function bindDiffPanel(
       return;
     }
 
+    if (message.page) {
+      const resolvedUri = await resolveWikilinkUri(message.page, uriToOpen);
+      if (resolvedUri) {
+        try {
+          const document = await vscode.workspace.openTextDocument(resolvedUri);
+          await vscode.window.showTextDocument(document, {
+            viewColumn: vscode.ViewColumn.One,
+            preserveFocus: false,
+          });
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            l10n.t("Could not open file: {0}", String(error)),
+          );
+        }
+      } else {
+        vscode.window.showWarningMessage(
+          l10n.t("Wikilink target not found: {0}", message.page),
+        );
+      }
+      return;
+    }
+
     try {
       const document = await vscode.workspace.openTextDocument(uriToOpen);
       const editor = await vscode.window.showTextDocument(document, {
@@ -1197,6 +1219,28 @@ export function activate(context: vscode.ExtensionContext) {
           }
 
           if (editor) {
+            if (message.page) {
+              resolveWikilinkUri(message.page, editor.document.uri).then((resolvedUri) => {
+                if (resolvedUri) {
+                  vscode.workspace.openTextDocument(resolvedUri).then((doc) => {
+                    vscode.window.showTextDocument(doc, {
+                      viewColumn: vscode.ViewColumn.One,
+                      preserveFocus: false,
+                    });
+                  }, (err) => {
+                    vscode.window.showErrorMessage(
+                      l10n.t("Could not open file: {0}", String(err)),
+                    );
+                  });
+                } else {
+                  vscode.window.showWarningMessage(
+                    l10n.t("Wikilink target not found: {0}", message.page),
+                  );
+                }
+              });
+              return;
+            }
+
             vscode.window
               .showTextDocument(editor.document, vscode.ViewColumn.One)
               .then((e) => {
@@ -1500,6 +1544,60 @@ class DiffEditorProvider implements vscode.CustomReadonlyEditorProvider {
       return toDiffPanelState(comparison);
     });
   }
+}
+
+async function resolveWikilinkUri(
+  page: string,
+  baseUri: vscode.Uri,
+): Promise<vscode.Uri | undefined> {
+  const cleanBase = toFileBackedUri(baseUri);
+  // 1. Try relative to the base file directory
+  let targetUri = vscode.Uri.joinPath(cleanBase, "..", page);
+  if (!path.extname(page)) {
+    targetUri = targetUri.with({ path: targetUri.path + ".md" });
+  }
+
+  try {
+    await vscode.workspace.fs.stat(targetUri);
+    return targetUri;
+  } catch {
+    // Ignore error, file does not exist at relative path
+  }
+
+  // 2. Try relative to workspace folders
+  if (vscode.workspace.workspaceFolders) {
+    for (const folder of vscode.workspace.workspaceFolders) {
+      let rootTargetUri = vscode.Uri.joinPath(folder.uri, page);
+      if (!path.extname(page)) {
+        rootTargetUri = rootTargetUri.with({ path: rootTargetUri.path + ".md" });
+      }
+      try {
+        await vscode.workspace.fs.stat(rootTargetUri);
+        return rootTargetUri;
+      } catch {
+        // Ignore error, file does not exist at workspace root
+      }
+    }
+  }
+
+  // 3. Search globally in the workspace for shortest path matching
+  const basename = path.basename(page);
+  const ext = path.extname(page) ? "" : ".md";
+  const globPattern = `**/${basename}${ext}`;
+  try {
+    const files = await vscode.workspace.findFiles(
+      globPattern,
+      "**/node_modules/**",
+      5,
+    );
+    if (files.length > 0) {
+      return files[0];
+    }
+  } catch (err) {
+    console.error("findFiles failed:", err);
+  }
+
+  return undefined;
 }
 
 export function deactivate() { }

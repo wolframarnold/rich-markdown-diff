@@ -4,8 +4,8 @@ This document tests all supported markdown extensions.
 
 ## Text Formatting
 
-This is **bold text** and this is _italic text_.
-You can also use ~~strikethrough~~ and `inline code`.
+This is **Bold text** and this is _Italic text_.
+You can also use ~~Strikethrough~~ and `inline code`.
 Use ==highlighted text== for emphasis.
 
 ## Lists
@@ -13,13 +13,13 @@ Use ==highlighted text== for emphasis.
 ### Unordered List
 
 - Item 1
-- Item 2
+
 - Item 3
 
 ### Ordered List
 
 1. First item
-2. Second item
+2. Second item (older)
 3. Third item
 
 ### Task List
@@ -32,6 +32,7 @@ Use ==highlighted text== for emphasis.
 ```javascript
 function greet(name) {
   console.log(`Hello, ${name}!`);
+  console.log(`Good night!`);
 }
 ```
 
@@ -40,8 +41,9 @@ function greet(name) {
 | Feature           | Status |
 | ----------------- | ------ |
 | Text diff         | ✅     |
-| Code highlighting | ✅     |
+| Code highlighting | ❌     |
 | Emoji support     | ✅     |
+| Obsidian support  | ✅     |
 
 ## Links and Images
 
@@ -58,7 +60,7 @@ function greet(name) {
 
 ## Math (KaTeX)
 
-Inline math: $E = mc^2$
+Inline math: $E = mc^2$ and $F = ma$
 
 Block math:
 
@@ -85,7 +87,7 @@ graph TD;
 
 # Obsidian
 
-#mermaid
+#mermaid #日本語
 
 ![[Page]]
 
@@ -160,13 +162,15 @@ SOFTWARE.
 Let's test inline badges: <Badge text="Caution" variant="caution" /> and <Badge text="Deprecated" variant="danger" />.
 
 And here is a Starlight steps component:
+
 <Steps>
 1. Download the tool
 2. Configure settings
 3. Start running
-</Steps>
+   </Steps>
 
 Here is a Starlight Card:
+
 <Card title="Introduction" icon="document">
   Welcome to the premium card view.
 </Card>
@@ -177,6 +181,7 @@ This is standard admonition text in v1.
 :::
 
 And a custom unknown fallback element:
+
 <CustomReactComponent user="alice" role="admin" />
 
 ## Summary

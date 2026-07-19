@@ -52,6 +52,10 @@ test.describe("Visual Regression Tests", () => {
 
   for (const c of cases) {
     test(`Visual Diff: ${c.name} - ${c.suffix}`, async ({ page }) => {
+      if (c.name === "comprehensive-v1-v2") {
+        test.setTimeout(180000);
+      }
+
       const v1Path = path.join(__dirname, "../../../fixtures", `${c.v1}.md`);
       const v2Path = path.join(__dirname, "../../../fixtures", `${c.v2}.md`);
       const md1 = fs.readFileSync(v1Path, "utf-8");

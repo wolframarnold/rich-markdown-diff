@@ -1,22 +1,23 @@
 <h1 data-line="0" data-line-end="1">Comprehensive Markdown Test Document<ins class="diffins">&nbsp;(Updated)</ins></h1>
-<p data-line="2" data-line-end="4">This document tests all supported markdown extensions<ins class="diffins">.
-Updated with additional content in version 2</ins>.</p>
+<p data-line="2" data-line-end="4">This document tests all supported markdown extensions.<ins class="diffins">
+Updated with additional content in version 2.</ins></p>
 <h2 data-line="5" data-line-end="6">Text Formatting</h2>
-<p data-line="7" data-line-end="11">This is <strong>bold text</strong> and this is <em>italic text</em>.
-You can also use <s>strikethrough</s> and <code>inline code</code>.
+<p data-line="7" data-line-end="11">This is <strong><del class="diffmod">Bold</del><ins class="diffmod">bold</ins> text</strong> and this is <em><del class="diffmod">Italic</del><ins class="diffmod">italic</ins> text</em>.
+You can also use <s><del class="diffmod">Strikethrough</del><ins class="diffmod">strikethrough</ins></s> and <code>inline code</code>.
 Use <mark>highlighted text</mark> for emphasis.<ins class="diffins">
 Added </ins><strong><ins class="diffins">new bold text</ins></strong><ins class="diffins">&nbsp;in version 2.</ins></p>
 <h2 data-line="12" data-line-end="13">Lists</h2>
 <h3 data-line="14" data-line-end="15">Unordered List</h3>
 <ul>
-<li data-line="16" data-line-end="17">Item 1</li>
-<li data-line="17" data-line-end="18">Item 2<ins class="diffins">&nbsp;(modified)</ins></li>
-<li data-line="18" data-line-end="19">Item 3</li><ins class="diffins diff-block"><li data-all-inserted="true" data-line="19" data-line-end="21">Item 4 (new)</li></ins>
+<li data-line="16" data-line-end="17"><p data-line="14" data-line-end="15">Item 1</p></li>
+<ins class="diffins diff-block"><li data-all-inserted="true" data-line="17" data-line-end="18">Item 2 (modified)</li></ins>
+<p data-line="16" data-line-end="17"><li data-line="18" data-line-end="19">Item 3</p></li>
+<ins class="diffins diff-block"><li data-all-inserted="true" data-line="19" data-line-end="21">Item 4 (new)</li></ins>
 </ul>
 <h3 data-line="21" data-line-end="22">Ordered List</h3>
 <ol>
 <li data-line="23" data-line-end="24">First item</li>
-<li data-line="24" data-line-end="25">Second item<ins class="diffins">&nbsp;(updated)</ins></li>
+<li data-line="24" data-line-end="25">Second item (<del class="diffmod">older</del><ins class="diffmod">updated</ins>)</li>
 <li data-line="25" data-line-end="26">Third item</li><ins class="diffins diff-block"><li data-all-inserted="true" data-line="26" data-line-end="28">Fourth item (added)</li></ins>
 </ol>
 <h3 data-line="28" data-line-end="29">Task List</h3>
@@ -26,31 +27,35 @@ Added </ins><strong><ins class="diffins">new bold text</ins></strong><ins class=
 <ins class="diffins diff-block"><li data-all-inserted="true" class="task-list-item" data-line="32" data-line-end="34"><input class="task-list-item-checkbox" checked disabled type="checkbox" /> Task 3</li></ins></ul>
 <h2 data-line="34" data-line-end="35">Code Blocks</h2>
 <div class="code-block-wrapper"><pre><code data-line="36" data-line-end="46" class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">greet</span>(<span class="hljs-params">name</span>) {<span class="hljs-comment"><ins class="diffins">// Updated comment in v2</ins></span>
-  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`Hello, <span class="hljs-subst">${name}</span>!<ins class="diffins">&nbsp;Welcome!`</ins></span><ins class="diffins">);
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`Hello, <span class="hljs-subst">${name}</span>!<ins class="diffins">&nbsp;Welcome!</ins>`</span>);<ins class="diffins">
 }
 
-</ins><span class="hljs-keyword"><ins class="diffins">function</ins></span><ins class="diffins">&nbsp;</ins><span class="hljs-title function_"><ins class="diffins">farewell</ins></span><ins class="diffins">(</ins><span class="hljs-params"><ins class="diffins">name</ins></span><ins class="diffins">) {
-  </ins><span class="hljs-variable language_"><ins class="diffins">console</ins></span><ins class="diffins">.</ins><span class="hljs-title function_"><ins class="diffins">log</ins></span><ins class="diffins">(</ins><span class="hljs-string"><ins class="diffins">`Goodbye, </ins><span class="hljs-subst"><ins class="diffins">${name}</ins></span><ins class="diffins">!</ins>`</span>);
+</ins><span class="hljs-keyword"><ins class="diffins">function</ins></span><ins class="diffins">&nbsp;</ins><span class="hljs-title function_"><ins class="diffins">farewell</ins></span><ins class="diffins">(</ins><span class="hljs-params"><ins class="diffins">name</ins></span><ins class="diffins">) {</ins>
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`<del class="diffmod">Good</del><ins class="diffmod">Goodbye,</ins> <del class="diffmod">night</del><span class="hljs-subst"><ins class="diffmod">${name}</ins></span>!`</span>);
 }
-</code></pre></div><del class="diffdel diff-block"><h2 >Tables</h2></del><del class="diffmod diff-block"><table data-line="39" data-line-end="44">
+</code></pre></div><del class="diffdel diff-block"><h2 data-line="38" data-line-end="39">Tables</h2></del><del class="diffmod diff-block"><table data-line="40" data-line-end="46">
 <thead>
-<tr data-line="39" data-line-end="40">
-<th data-line="39" data-line-end="40">Feature</th>
-<th data-line="39" data-line-end="40">Status</th>
+<tr data-line="40" data-line-end="41">
+<th data-line="40" data-line-end="41">Feature</th>
+<th data-line="40" data-line-end="41">Status</th>
 </tr>
 </thead>
 <tbody>
-<tr data-line="41" data-line-end="42">
-<td data-line="41" data-line-end="42">Text diff</td>
-<td data-line="41" data-line-end="42">✅</td>
-</tr>
 <tr data-line="42" data-line-end="43">
-<td data-line="42" data-line-end="43">Code highlighting</td>
+<td data-line="42" data-line-end="43">Text diff</td>
 <td data-line="42" data-line-end="43">✅</td>
 </tr>
 <tr data-line="43" data-line-end="44">
-<td data-line="43" data-line-end="44">Emoji support</td>
-<td data-line="43" data-line-end="44">✅</td>
+<td data-line="43" data-line-end="44">Code highlighting</td>
+<td data-line="43" data-line-end="44">❌</td>
+</tr>
+<tr data-line="44" data-line-end="45">
+<td data-line="44" data-line-end="45">Emoji support</td>
+<td data-line="44" data-line-end="45">✅</td>
+</tr>
+<tr data-line="45" data-line-end="46">
+<td data-line="45" data-line-end="46">Obsidian support</td>
+<td data-line="45" data-line-end="46">✅</td>
 </tr>
 </tbody>
 </table></del><h2 data-line="47" data-line-end="48">Links and Images</h2>
@@ -64,7 +69,7 @@ Added a new line in version 2.</ins></p>
 <h2 data-line="58" data-line-end="59">Emoji</h2>
 <p data-line="60" data-line-end="61">😄 🚀 👍<ins class="diffins">&nbsp;⭐ ❤️</ins></p><ins class="diffins diff-block"><hr /></ins>
 <h2 data-line="64" data-line-end="65">Math (KaTeX)</h2>
-<p data-line="66" data-line-end="67">Inline math: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">E = mc^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em"></span><span class="mord mathnormal" style="margin-right:0.05764em">E</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:0.8141079999999999em;vertical-align:0em"></span><span class="mord mathnormal">m</span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em"><span style="top:-3.063em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span><ins class="diffins">&nbsp;and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mi>m</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">F = ma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em"></span><span class="mord mathnormal" style="margin-right:0.13889em">F</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">a</span></span></span></span></ins></p>
+<p data-line="66" data-line-end="67">Inline math: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>=</mo><mi>m</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">E = mc^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em"></span><span class="mord mathnormal" style="margin-right:0.05764em">E</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:0.8141079999999999em;vertical-align:0em"></span><span class="mord mathnormal">m</span><span class="mord"><span class="mord mathnormal">c</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141079999999999em"><span style="top:-3.063em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mi>m</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">F = ma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em"></span><span class="mord mathnormal" style="margin-right:0.13889em">F</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">a</span></span></span></span></p>
 <p data-line="68" data-line-end="69">Block math:</p>
 <p class="katex-block" data-line="70" data-line-end="73"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mo>∫</mo><mrow><mo>−</mo><mi mathvariant="normal">∞</mi></mrow><mi mathvariant="normal">∞</mi></msubsup><msup><mi>e</mi><mrow><mo>−</mo><msup><mi>x</mi><mn>2</mn></msup></mrow></msup><mi>d</mi><mi>x</mi><mo>=</mo><msqrt><mi>π</mi></msqrt></mrow><annotation encoding="application/x-tex">\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
 </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.384573em;vertical-align:-0.970281em"></span><span class="mop"><span class="mop op-symbol large-op" style="margin-right:0.44445em;position:relative;top:-0.0011249999999999316em">∫</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.414292em"><span style="top:-1.7880500000000001em;margin-left:-0.44445em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">∞</span></span></span></span><span style="top:-3.8129000000000004em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">∞</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.970281em"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em"></span><span class="mord"><span class="mord mathnormal">e</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:1.0369199999999998em"><span style="top:-3.113em;margin-right:0.05em"><span class="pstrut" style="height:2.7em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8913142857142857em"><span style="top:-2.931em;margin-right:0.07142857142857144em"><span class="pstrut" style="height:2.5em"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="mord mathnormal">d</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:1.04em;vertical-align:-0.190845em"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8491550000000001em"><span class="svg-align" style="top:-3em"><span class="pstrut" style="height:3em"></span><span class="mord" style="padding-left:0.833em"><span class="mord mathnormal" style="margin-right:0.03588em">π</span></span></span><span style="top:-2.809155em"><span class="pstrut" style="height:3em"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em"><svg width="400em" height="1.08em"><path d="M95,702
@@ -81,7 +86,7 @@ c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
 M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.190845em"><span></span></span></span></span></span></span></span></span></span></p>
 <ins class="diffins diff-block"><p data-line="74" data-line-end="75">New equation added:</p></ins><ins class="diffins diff-block"><p class="katex-block" data-line="76" data-line-end="79"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mi>i</mi><mo>=</mo><mfrac><mrow><mi>n</mi><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">\sum_{i=1}^{n} i = \frac{n(n+1)}{2}
 </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:2.929066em;vertical-align:-1.277669em"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.6513970000000002em"><span style="top:-1.872331em;margin-left:0em"><span class="pstrut" style="height:3.05em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.050005em"><span class="pstrut" style="height:3.05em"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.3000050000000005em;margin-left:0em"><span class="pstrut" style="height:3.05em"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em"></span><span class="mord mathnormal">i</span><span class="mspace" style="margin-right:0.2777777777777778em"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em"></span></span><span class="base"><span class="strut" style="height:2.113em;vertical-align:-0.686em"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.427em"><span style="top:-2.314em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord">2</span></span></span><span style="top:-3.23em"><span class="pstrut" style="height:3em"></span><span class="frac-line" style="border-bottom-width:0.04em"></span></span><span style="top:-3.677em"><span class="pstrut" style="height:3em"></span><span class="mord"><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222222222222222em"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p></ins><h2 data-line="80" data-line-end="81">Mermaid Diagrams</h2>
-<del class="diffmod diff-block"><div class="mermaid" data-line="70" data-line-end="76" data-original-content="graph TD;
+<del class="diffmod diff-block"><div class="mermaid" data-line="72" data-line-end="78" data-original-content="graph TD;
     A--&gt;B;
     B--&gt;C;
     C--&gt;D;
@@ -115,19 +120,17 @@ graph TD
 
 </div></ins><h2 data-line="95" data-line-end="96">GitHub Alerts</h2>
 <div class="markdown-alert markdown-alert-note" data-line="97" data-line-end="99"><p class="markdown-alert-title"><svg class="octicon octicon-info mr-2" width="16" height="16" aria-hidden="true"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"></path></svg>Note</p>
-<del class="diffmod diff-block"><div class="markdown-alert markdown-alert-note" data-line="79" data-line-end="81"><p data-line="79" data-line-end="81">This is a note alert.</p>
-</del></div><ins class="diffmod diff-block"><div class="markdown-alert markdown-alert-note" data-line="97" data-line-end="99"><p data-line="97" data-line-end="99">This is a note alert with updated content.</p>
-</div></ins></div>
+<p data-line="97" data-line-end="99">This is a note alert<ins class="diffins">&nbsp;with updated content</ins>.</p></div>
 <div class="markdown-alert markdown-alert-warning" data-line="100" data-line-end="102"><p class="markdown-alert-title"><svg class="octicon octicon-alert mr-2" width="16" height="16" aria-hidden="true"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p><p data-line="100" data-line-end="102">This is a warning alert.</p>
 </div>
-<del class="diffdel diff-block"><h1 >Obsidian</h1></del><p ><span class="obsidian-tag" data-tag="mermaid"><del class="diffmod">#mermaid</del></span></p><p ></p><div ><span class="obsidian-embed-icon"><del class="diffmod">📄</del></span><span class="obsidian-embed-link"><del class="diffmod">Page</del></span></div><p></p><ins class="diffmod diff-block"><div class="markdown-alert markdown-alert-tip" data-line="103" data-line-end="105"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p data-line="103" data-line-end="105">This is a new tip alert added in v2.</p>
+<del class="diffdel diff-block"><h1 data-line="87" data-line-end="88">Obsidian</h1></del><p data-line="89" data-line-end="90"><span class="obsidian-tag" data-tag="mermaid"><del class="diffmod">#mermaid</del></span><del class="diffmod">&nbsp;</del><span class="obsidian-tag" data-tag="日本語"><del class="diffmod">#日本語</del></span></p><p data-line="91" data-line-end="92"></p><div class="obsidian-embed" data-page="Page"><span class="obsidian-embed-icon"><del class="diffmod">📄</del></span><span class="obsidian-embed-link"><del class="diffmod">Page</del></span></div><p></p><ins class="diffmod diff-block"><div class="markdown-alert markdown-alert-tip" data-line="103" data-line-end="105"><p class="markdown-alert-title"><svg class="octicon octicon-light-bulb mr-2" width="16" height="16" aria-hidden="true"><path d="M8 1.5c-2.363 0-4 1.69-4 3.75 0 .984.424 1.625.984 2.304l.214.253c.223.264.47.556.673.848.284.411.537.896.621 1.49a.75.75 0 0 1-1.484.211c-.04-.282-.163-.547-.37-.847a8.456 8.456 0 0 0-.542-.68c-.084-.1-.173-.205-.268-.32C3.201 7.75 2.5 6.766 2.5 5.25 2.5 2.31 4.863 0 8 0s5.5 2.31 5.5 5.25c0 1.516-.701 2.5-1.328 3.259-.095.115-.184.22-.268.319-.207.245-.383.453-.541.681-.208.3-.33.565-.37.847a.751.751 0 0 1-1.485-.212c.084-.593.337-1.078.621-1.489.203-.292.45-.584.673-.848.075-.088.147-.173.213-.253.561-.679.985-1.32.985-2.304 0-2.06-1.637-3.75-4-3.75ZM5.75 12h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1 0-1.5ZM6 15.25a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"></path></svg>Tip</p><p data-line="103" data-line-end="105">This is a new tip alert added in v2.</p>
 </div></ins>
 <h2 data-line="106" data-line-end="107">Footnotes</h2>
 <p data-line="108" data-line-end="110">This is a sentence with a footnote<sup class="footnote-ref"><a href="#fn-new-1" id="fnref-new-1">[1]</a></sup>.<ins class="diffins">
 And another sentence with a second footnote</ins><sup class="footnote-ref"><a href="#fn-new-2" id="fnref-new-2"><ins class="diffins">[2]</ins></a></sup><ins class="diffins">.</ins></p>
 <h2 data-line="115" data-line-end="116">Wikilinks</h2>
-<p data-line="117" data-line-end="119">See <a href="Related%20Page">Related Page</a> for more information<ins class="diffins">.
-Also check </ins><a href="New%20Page"><ins class="diffins">New Page</ins></a><ins class="diffins">&nbsp;for recent updates</ins>.</p>
+<p data-line="117" data-line-end="119">See <a href="Related%20Page" class="wikilink" data-page="Related Page">Related Page</a> for more information<ins class="diffins">.
+Also check </ins><a href="New%20Page" class="wikilink" data-page="New Page"><ins class="diffins">New Page</ins></a><ins class="diffins">&nbsp;for recent updates</ins>.</p>
 <h2 data-line="120" data-line-end="121">Subscript and Superscript</h2>
 <p data-line="122" data-line-end="126">Water formula: H<sub>2</sub>O
 <ins class="diffins">Sulfuric acid: H</ins><sub><ins class="diffins">2</ins></sub>SO<sub><ins class="diffins">4</ins></sub>
@@ -161,7 +164,7 @@ SOFTWARE.</p>
 <h2 data-line="162" data-line-end="163">Image Test</h2>
 <div class="image-diff-block" data-image-diff="true" data-line="164">
         <div class="image-diff-wrapper">
-          <div class="diff-image-old"><img src="img_v1.svg" alt="Icon V1" data-line="140" /></div>
+          <div class="diff-image-old"><img src="img_v1.svg" alt="Icon V1" data-line="142" /></div>
           <div class="diff-image-new"><img src="img_v2.svg" alt="Icon V2" data-line="164" /></div>
         </div>
       </div>
@@ -181,27 +184,35 @@ SOFTWARE.</p>
   ```
 </code></pre>
 </div></ins></div><p data-line="189" data-line-end="190">Let’s test inline badges: <span class="mdx-badge mdx-badge-warning"><del class="diffmod">Caution</del><ins class="diffmod">Warning</ins></span> and <span class="mdx-badge mdx-badge-danger"><del class="diffmod">Deprecated</del><ins class="diffmod">Removed</ins></span>.</p>
-<p data-line="191" data-line-end="193">And here is a Starlight steps component:
-<span class="mdx-inline-fallback">&lt;Steps /&gt;</span></p>
-<ol>
-<li data-line="193" data-line-end="194">Download the tool<ins class="diffins">&nbsp;(new version)</ins></li>
-<li data-line="194" data-line-end="195">Configure settings<ins class="diffins">&nbsp;securely</ins></li>
-<li data-line="195" data-line-end="198">Start running<ins class="diffins">&nbsp;the process</ins>
-</li>
+<p data-line="191" data-line-end="193">And here is a Starlight steps component:<span class="mdx-inline-fallback"><ins class="diffins">&lt;Steps /&gt;</ins></span></p>
+<div class="mdx-steps" data-line="165" data-line-end="166"><ol>
+<li data-line="194" data-line-end="195">Download the tool<ins class="diffins">&nbsp;(new version)</ins></li>
+<li data-line="195" data-line-end="196">Configure settings<ins class="diffins">&nbsp;securely</ins></li>
+<li data-line="196" data-line-end="199">Start running<ins class="diffins">&nbsp;the process
+</ins></li>
 </ol>
-<p data-line="198" data-line-end="202">Here is a Starlight Card:
-<span class="mdx-inline-fallback">&lt;Card title="Introduction" icon="<del class="diffmod">document</del><ins class="diffmod">note</ins>" /&gt;</span>
-Welcome to the premium card view<ins class="diffins">, now with updated content</ins>.
-</p>
-<p data-line="203" data-line-end="207">And a Docusaurus Admonition:
+</div><p data-line="199" data-line-end="200">Here is a Starlight Card:</p>
+<div class="mdx-card" data-line="201" data-line-end="202">
+        <div class="mdx-card-header">
+          <span class="mdx-card-icon mdx-codicon mdx-icon-note"></span>
+          <span class="mdx-card-title">Introduction</span>
+        </div>
+        <div class="mdx-card-body"><p data-line="202" data-line-end="203">Welcome to the premium card view<ins class="diffins">, now with updated content</ins>.</p>
+</div></div><p data-line="205" data-line-end="209">And a Docusaurus Admonition:
 :::note Note Title
 This is standard admonition text <ins class="diffins">with updates </ins>in <del class="diffmod">v1</del><ins class="diffmod">v2</ins>.
 :::</p>
-<div class="mdx-admonition mdx-admonition-danger" data-line="208" data-line-end="209"><div class="mdx-admonition-header"><span class="mdx-admonition-icon mdx-codicon mdx-icon-danger"></span><span class="mdx-admonition-title"><ins class="diffins">Warning</ins></span></div><ins class="diffins diff-block"><div class="mdx-admonition-body"><p data-line="209" data-line-end="210">Critical warning!</p>
-</div></ins></div><p data-line="212" data-line-end="214">And a custom unknown fallback element:
-<span class="mdx-inline-fallback">&lt;CustomReactComponent user="alice" role="<ins class="diffins">super-</ins>admin<ins class="diffins">" theme="dark</ins>" /&gt;</span></p>
-<h2 data-line="215" data-line-end="216">Summary</h2>
-<p data-line="217" data-line-end="218">This is version <del class="diffmod">1</del><ins class="diffmod">2</ins> of the comprehensive test document<ins class="diffins">&nbsp;with modifications</ins>.</p>
+<div class="mdx-admonition mdx-admonition-danger" data-line="210" data-line-end="211"><div class="mdx-admonition-header"><span class="mdx-admonition-icon mdx-codicon mdx-icon-danger"></span><span class="mdx-admonition-title"><ins class="diffins">Warning</ins></span></div><ins class="diffins diff-block"><div class="mdx-admonition-body"><p data-line="211" data-line-end="212">Critical warning!</p>
+</div></ins></div><p data-line="214" data-line-end="215">And a custom unknown fallback element:</p>
+<div class="mdx-fallback-card mdx-self-closing" data-line="216" data-line-end="217">
+      <div class="mdx-fallback-header">
+        <span class="mdx-fallback-badge">Custom Component: &lt;CustomReactComponent /&gt;</span>
+      </div>
+      <div class="mdx-fallback-body">
+        <ul class="mdx-fallback-props"><li><code>user</code>: <code>alice</code></li><li><code>role</code>: <code><ins class="diffins">super-</ins>admin</code></li><li data-all-inserted="true"><code><ins class="diffins">theme</ins></code><ins class="diffins">: </ins><code><ins class="diffins">dark</ins></code></li></ul>
+      </div>
+    </div><h2 data-line="218" data-line-end="219">Summary</h2>
+<p data-line="220" data-line-end="221">This is version <del class="diffmod">1</del><ins class="diffmod">2</ins> of the comprehensive test document<ins class="diffins">&nbsp;with modifications</ins>.</p>
 <hr class="footnotes-sep" />
 <section class="footnotes">
 <ol class="footnotes-list">

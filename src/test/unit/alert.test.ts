@@ -137,4 +137,19 @@ describe("GitHub Alert Tests", () => {
     // ALSO check if the dot actually EXISTS in the final output for V1 and V2
     assert.ok(alertContent.includes("."), "The dot must be preserved");
   });
+
+  it("should correctly render the updated content of an alert without duplicate nested divs and preserve the text", () => {
+    const oldMd = `\n> [!NOTE]\n> This is a note alert.\n`;
+    const newMd = `\n> [!NOTE]\n> This is a note alert with updated content.\n`;
+
+    const { html: diffHtml } = provider.computeDiff(oldMd, newMd);
+    
+    // Ensure the updated text is present in the final HTML output
+    const cleanText = diffHtml.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ");
+    assert.ok(cleanText.includes("This is a note alert with updated content."), "HTML should include the updated text");
+    
+    // Ensure there are no duplicate/nested alert divs
+    const alertDivCount = (diffHtml.match(/<div[^>]*class="[^"]*markdown-alert/g) || []).length;
+    assert.strictEqual(alertDivCount, 1, "Should only have a single alert div container, no nesting");
+  });
 });

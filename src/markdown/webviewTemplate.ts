@@ -1229,6 +1229,26 @@ export function getWebviewContent(
             background-color: rgba(74, 222, 128, 0.2);
             color: var(--vscode-editor-foreground);
         }
+        .frontmatter-diff td.selected-change.selected-ins {
+            outline: 2px solid rgba(34, 197, 94, 0.8) !important;
+            outline-offset: -2px;
+            background-color: rgba(34, 197, 94, 0.35) !important;
+        }
+        .frontmatter-diff td.selected-change.selected-del {
+            outline: 2px solid rgba(239, 68, 68, 0.8) !important;
+            outline-offset: -2px;
+            background-color: rgba(248, 113, 113, 0.3) !important;
+        }
+        .frontmatter-diff td.selected-change.selected-mod {
+            outline: 2px solid rgba(59, 130, 246, 0.75) !important;
+            outline-offset: -2px;
+        }
+        .frontmatter-diff td.selected-change.selected-mod.fm-old {
+            background-color: rgba(248, 113, 113, 0.35) !important;
+        }
+        .frontmatter-diff td.selected-change.selected-mod.fm-new {
+            background-color: rgba(74, 222, 128, 0.35) !important;
+        }
 
         /* Split View Frontmatter Strategy */
         /* Left Pane: Hide New, Show Old */
@@ -1968,12 +1988,14 @@ export function getWebviewContent(
             padding: 0;
             margin: 0;
             position: relative;
+            counter-reset: steps-counter;
         }
         .mdx-steps ol > li {
             position: relative;
             padding-left: 36px;
             margin-bottom: 24px;
             min-height: 28px;
+            counter-increment: steps-counter;
         }
         .mdx-steps ol > li::before {
             content: "";
@@ -1988,8 +2010,7 @@ export function getWebviewContent(
             display: none;
         }
         .mdx-steps ol > li::after {
-            content: counter(list-item);
-            counter-increment: list-item;
+            content: counter(steps-counter);
             position: absolute;
             left: 0;
             top: 2px;
@@ -3301,7 +3322,16 @@ export function getWebviewContent(
             containers.forEach((container) => {
                 if (container.querySelector('.mdx-tab-bar')) return;
                 
-                const contents = Array.from(container.querySelectorAll(':scope > .mdx-tab-content'));
+                const isInlineMode = document.body.classList.contains('inline-mode');
+                const contents = Array.from(container.querySelectorAll('.mdx-tab-content'))
+                    .filter(el => {
+                        if (el.closest('.mdx-tabs-container') !== container) return false;
+                        if (!isInlineMode) {
+                            if (container.closest('#left-pane') && el.closest('ins')) return false;
+                            if (container.closest('#right-pane') && el.closest('del')) return false;
+                        }
+                        return true;
+                    });
                 if (contents.length === 0) return;
                 
                 const tabBar = document.createElement('div');
@@ -3742,6 +3772,18 @@ export function getWebviewContent(
             const selection = window.getSelection();
             if (selection && selection.toString().length > 0) {
                 return;
+            }
+
+            // Wikilink Click
+            const wikilinkEl = e.target.closest('.wikilink');
+            if (wikilinkEl) {
+                e.preventDefault();
+                const page = wikilinkEl.getAttribute('data-page');
+                if (page) {
+                    const side = wikilinkEl.closest('#left-pane') ? 'original' : 'modified';
+                    vscode.postMessage({ command: 'openSource', side: side, page: page });
+                    return;
+                }
             }
 
             // Obsidian Tag Click
