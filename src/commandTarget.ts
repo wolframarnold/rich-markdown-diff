@@ -25,7 +25,10 @@
 import * as vscode from "vscode";
 import {
   getComparisonHintFromUris,
+  getGitUriRef,
   GitComparisonHint,
+  isRevisionRef,
+  normalizeFsPath,
 } from "./gitDiffResolver";
 
 export interface CommandResourceLike {
@@ -51,6 +54,17 @@ export interface CommandTarget {
   comparisonHint: GitComparisonHint;
   originalUri?: vscode.Uri;
   modifiedUri?: vscode.Uri;
+}
+
+/**
+ * A comparison between two concrete sides, at least one of which names a
+ * specific git revision. Both sides are kept verbatim - including their refs -
+ * because the revision is exactly what the working tree and index comparison
+ * modes cannot represent.
+ */
+export interface ComparisonUriPair {
+  readonly originalUri: vscode.Uri;
+  readonly modifiedUri: vscode.Uri;
 }
 
 const gitRefPathPattern = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
@@ -250,6 +264,70 @@ export function getCommandTarget(arg: unknown): CommandTarget | undefined {
 
 export function getFileUriFromCommandArg(arg: unknown): vscode.Uri | undefined {
   return getCommandTarget(arg)?.targetUri;
+}
+
+/**
+ * Detects a comparison that names a specific git revision on at least one side,
+ * such as the commit-to-commit diff opened from the Source Control Graph.
+ *
+ * Comparisons that only involve HEAD, the index, or the working tree are left
+ * alone so that {@link getCommandTarget}'s existing hints keep handling them.
+ *
+ * @param originalUri - The left side of the comparison, if known.
+ * @param modifiedUri - The right side of the comparison, if known.
+ * @returns Both sides when a revision is involved, otherwise undefined.
+ */
+export function getRevisionComparison(
+  originalUri: vscode.Uri | undefined,
+  modifiedUri: vscode.Uri | undefined,
+): ComparisonUriPair | undefined {
+  if (!originalUri || !modifiedUri) {
+    return undefined;
+  }
+
+  const namesRevision =
+    isRevisionRef(getGitUriRef(originalUri)) ||
+    isRevisionRef(getGitUriRef(modifiedUri));
+
+  return namesRevision ? { originalUri, modifiedUri } : undefined;
+}
+
+/**
+ * Reports whether two URIs refer to the same underlying file, ignoring whether
+ * each one addresses the working tree copy or a git revision of it.
+ *
+ * @param candidate - The URI to test.
+ * @param targetUri - The file the command is acting on.
+ * @returns True when both address the same path.
+ */
+export function refersToSameFile(
+  candidate: vscode.Uri,
+  targetUri: vscode.Uri,
+): boolean {
+  return (
+    normalizeFsPath(toFileBackedUri(candidate).fsPath) ===
+    normalizeFsPath(toFileBackedUri(targetUri).fsPath)
+  );
+}
+
+/**
+ * Reads both sides of the diff editor that currently has focus.
+ *
+ * The editor title bar passes the command only the active resource, so when the
+ * diff was opened from a commit the counterpart revision has to come from the
+ * tab itself.
+ *
+ * @returns Both sides of the active diff tab, or undefined when the active tab
+ *   is not a text diff editor.
+ */
+export function getActiveDiffTabUriPair(): ComparisonUriPair | undefined {
+  const input = vscode.window.tabGroups.activeTabGroup?.activeTab?.input;
+
+  if (input instanceof vscode.TabInputTextDiff) {
+    return { originalUri: input.original, modifiedUri: input.modified };
+  }
+
+  return undefined;
 }
 
 export const __test__ = {

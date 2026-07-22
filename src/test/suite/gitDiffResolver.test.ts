@@ -25,12 +25,15 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import {
+  describeComparisonSide,
   getComparisonHintFromUris,
   getGitUriRef,
   GitApi,
   GitChange,
   GitRepository,
+  isRevisionRef,
   resolveSingleFileComparison,
+  shortenRef,
 } from "../../gitDiffResolver";
 
 class FakeRepository implements GitRepository {
@@ -225,5 +228,77 @@ describe("Git Diff Resolver", () => {
     assert.strictEqual(comparison.kind, "cleanHeadToWorkingTree");
     assert.strictEqual(getGitUriRef(comparison.originalUri), "HEAD");
     assert.strictEqual(comparison.modifiedUri?.toString(), fileUri.toString());
+  });
+});
+
+describe("Revision Refs", () => {
+  const commitSha = "c02e3e4a1b2c3d4e5f60718293a4b5c6d7e8f901";
+
+  it("should treat a commit SHA as a revision", () => {
+    assert.strictEqual(isRevisionRef(commitSha), true);
+  });
+
+  it("should treat branch and tag names as revisions", () => {
+    assert.strictEqual(isRevisionRef("main"), true);
+    assert.strictEqual(isRevisionRef("v1.4.0"), true);
+    assert.strictEqual(isRevisionRef("HEAD~3"), true);
+  });
+
+  it("should not treat the index ref as a revision", () => {
+    assert.strictEqual(isRevisionRef(""), false);
+  });
+
+  it("should not treat the working tree ref as a revision", () => {
+    assert.strictEqual(isRevisionRef("~"), false);
+  });
+
+  it("should not treat HEAD as a revision", () => {
+    assert.strictEqual(isRevisionRef("HEAD"), false);
+  });
+
+  it("should not treat a missing ref as a revision", () => {
+    assert.strictEqual(isRevisionRef(undefined), false);
+  });
+
+  it("should shorten a full commit SHA for display", () => {
+    assert.strictEqual(shortenRef(commitSha), "c02e3e4");
+  });
+
+  it("should leave branch names and short refs unshortened", () => {
+    assert.strictEqual(shortenRef("main"), "main");
+    assert.strictEqual(shortenRef("v1.4.0"), "v1.4.0");
+    assert.strictEqual(shortenRef("c02e3e4"), "c02e3e4");
+  });
+});
+
+describe("Comparison Side Labels", () => {
+  const fileUri = vscode.Uri.file("/repo/docs/example.md");
+  const commitSha = "c02e3e4a1b2c3d4e5f60718293a4b5c6d7e8f901";
+
+  const gitUri = (ref: string) =>
+    fileUri.with({
+      scheme: "git",
+      query: JSON.stringify({ path: fileUri.fsPath, ref }),
+    });
+
+  it("should label a commit side with its shortened SHA", () => {
+    assert.strictEqual(describeComparisonSide(gitUri(commitSha)), "c02e3e4");
+  });
+
+  it("should label a branch side with its name", () => {
+    assert.strictEqual(describeComparisonSide(gitUri("main")), "main");
+  });
+
+  it("should label the HEAD side", () => {
+    assert.strictEqual(describeComparisonSide(gitUri("HEAD")), "HEAD");
+  });
+
+  it("should label the index side as staged", () => {
+    assert.strictEqual(describeComparisonSide(gitUri("")), "Staged");
+  });
+
+  it("should label the working tree side", () => {
+    assert.strictEqual(describeComparisonSide(gitUri("~")), "Working Tree");
+    assert.strictEqual(describeComparisonSide(fileUri), "Working Tree");
   });
 });
