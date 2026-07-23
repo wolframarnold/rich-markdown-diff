@@ -92,7 +92,23 @@ const HEAD_LABEL = "HEAD";
 const INDEX_LABEL = "Staged";
 const WORKING_TREE_LABEL = "Working Tree";
 
-function normalizeFsPath(fsPath: string): string {
+/** The ref the Git extension uses for the staged copy of a file. */
+const INDEX_REF = "";
+/** The ref the Git extension uses for the working tree copy of a file. */
+const WORKING_TREE_REF = "~";
+
+const FULL_COMMIT_SHA_PATTERN = /^[0-9a-f]{40}$/i;
+const SHORT_COMMIT_SHA_LENGTH = 7;
+
+/**
+ * Normalizes a file system path for comparison, so that separator style and -
+ * on Windows - letter case cannot make two references to one file look
+ * different.
+ *
+ * @param fsPath - The path to normalize.
+ * @returns The comparable form of the path.
+ */
+export function normalizeFsPath(fsPath: string): string {
   const normalized = fsPath.replace(/\\/g, "/");
   return process.platform === "win32" ? normalized.toLowerCase() : normalized;
 }
@@ -340,6 +356,56 @@ export function getGitUriRef(uri: vscode.Uri | undefined): string | undefined {
   }
 }
 
+/**
+ * Reports whether a git ref names a specific revision - a commit, tag, or
+ * branch - rather than one of the three well-known refs that the working tree
+ * and index comparison modes already express.
+ *
+ * @param ref - A ref read from a git URI, or undefined for a non-git URI.
+ * @returns True when the ref names a revision those modes cannot reach.
+ */
+export function isRevisionRef(ref: string | undefined): boolean {
+  return (
+    ref !== undefined &&
+    ref !== INDEX_REF &&
+    ref !== WORKING_TREE_REF &&
+    ref !== HEAD_LABEL
+  );
+}
+
+/**
+ * Shortens a full commit SHA so that it reads well in a diff panel label.
+ *
+ * @param ref - The ref to display.
+ * @returns The 7-character prefix for a full SHA, otherwise the ref unchanged.
+ */
+export function shortenRef(ref: string): string {
+  return FULL_COMMIT_SHA_PATTERN.test(ref)
+    ? ref.slice(0, SHORT_COMMIT_SHA_LENGTH)
+    : ref;
+}
+
+/**
+ * Builds the panel label for one side of a comparison.
+ *
+ * @param uri - The URI backing that side of the comparison.
+ * @returns The ref for a revision side, otherwise the well-known label for
+ *   HEAD, the index, or the working tree.
+ */
+export function describeComparisonSide(uri: vscode.Uri): string {
+  const ref = getGitUriRef(uri);
+
+  if (ref === undefined || ref === WORKING_TREE_REF) {
+    return WORKING_TREE_LABEL;
+  }
+
+  if (ref === INDEX_REF) {
+    return INDEX_LABEL;
+  }
+
+  return shortenRef(ref);
+}
+
 export function getComparisonHintFromUris(
   originalUri?: vscode.Uri,
   modifiedUri?: vscode.Uri,
@@ -347,11 +413,11 @@ export function getComparisonHintFromUris(
   const originalRef = getGitUriRef(originalUri);
   const modifiedRef = getGitUriRef(modifiedUri);
 
-  if (modifiedRef === "") {
+  if (modifiedRef === INDEX_REF) {
     return "index";
   }
 
-  if (originalRef === "~" || originalRef === "") {
+  if (originalRef === WORKING_TREE_REF || originalRef === INDEX_REF) {
     return "workingTree";
   }
 

@@ -25,14 +25,20 @@
 import * as vscode from "vscode";
 import { MarkdownDiffProvider } from "./markdownDiff";
 import {
+  describeComparisonSide,
   GitRepository,
   resolveSingleFileComparison,
   tryGetGitApi,
 } from "./gitDiffResolver";
 import { resolveBlameInfo } from "./gitBlameResolver";
 import {
+  CommandTarget,
+  ComparisonUriPair,
+  getActiveDiffTabUriPair,
   getCommandTarget,
   getFileUriFromCommandArg,
+  getRevisionComparison,
+  refersToSameFile,
   toFileBackedUri,
 } from "./commandTarget";
 import * as path from "path";
@@ -1331,6 +1337,20 @@ export function activate(context: vscode.ExtensionContext) {
     }
     // ---------------------------
 
+    // A comparison between two revisions - the commit diff opened from the
+    // Source Control Graph, for instance - carries its refs in the URIs. The
+    // working tree and index modes below cannot express those, so render the
+    // two revisions directly.
+    const revisionComparison = resolveRevisionComparison(
+      commandTarget,
+      targetUri,
+    );
+
+    if (revisionComparison) {
+      await showRevisionDiff(revisionComparison, context);
+      return;
+    }
+
     const initialComparison = await resolveSingleFileComparison(
       targetUri,
       comparisonHint,
@@ -1449,6 +1469,75 @@ export function activate(context: vscode.ExtensionContext) {
         );
       },
     ),
+  );
+}
+
+/**
+ * Finds a comparison that names a specific git revision for this invocation.
+ *
+ * The SCM views pass both sides as command arguments. The editor title bar
+ * passes only the active resource, so a diff opened from a commit is recovered
+ * from the focused tab instead - but only when that tab really shows the file
+ * the command is acting on.
+ *
+ * @param commandTarget - The resolved command argument, if there was one.
+ * @param targetUri - The file the command is acting on.
+ * @returns The revision comparison to render, or undefined when the existing
+ *   working tree and index modes should handle the invocation.
+ */
+function resolveRevisionComparison(
+  commandTarget: CommandTarget | undefined,
+  targetUri: vscode.Uri,
+): ComparisonUriPair | undefined {
+  const fromArgument = getRevisionComparison(
+    commandTarget?.originalUri,
+    commandTarget?.modifiedUri,
+  );
+
+  if (fromArgument) {
+    return fromArgument;
+  }
+
+  const activePair = getActiveDiffTabUriPair();
+
+  if (!activePair || !refersToSameFile(activePair.modifiedUri, targetUri)) {
+    return undefined;
+  }
+
+  return getRevisionComparison(activePair.originalUri, activePair.modifiedUri);
+}
+
+/**
+ * Shows the rendered diff between two git revisions of the same document.
+ *
+ * @param comparison - The two sides to render.
+ * @param context - The extension context.
+ */
+async function showRevisionDiff(
+  comparison: ComparisonUriPair,
+  context: vscode.ExtensionContext,
+) {
+  const { originalUri, modifiedUri } = comparison;
+  const leftLabel = describeComparisonSide(originalUri);
+  const rightLabel = describeComparisonSide(modifiedUri);
+  const fileUri = toFileBackedUri(modifiedUri);
+
+  await createAndBindDiffPanel(
+    `${l10n.t("Markdown Diff")}: ${path.basename(fileUri.fsPath)} (${leftLabel} ↔ ${rightLabel})`,
+    context,
+    async () => ({
+      originalUri,
+      modifiedUri,
+      leftLabel,
+      rightLabel,
+      // Committed blobs never change, so only a working tree side is watched.
+      watchUris: [originalUri, modifiedUri].filter(
+        (uri) => uri.scheme === "file",
+      ),
+      originalImageBaseUri: originalUri,
+      modifiedImageBaseUri: modifiedUri,
+      fallbackSourceUri: fileUri,
+    }),
   );
 }
 
